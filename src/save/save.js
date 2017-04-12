@@ -128,7 +128,7 @@ class Save extends Entity {
   }
 
   message(...args) {
-    this.server && this.server.monitor.command('say', args.join(' '));
+    this.server && this.server.monitor.send('say', args.join(' '));
   }
 }
 

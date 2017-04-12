@@ -93,5 +93,22 @@ export default function() {
     ],
 
     delete: async ctx => {},
+
+    children: [
+      () => ({
+        name: 'log',
+
+        index: async ctx => {
+          ctx.body = ctx.server.monitor.lines;
+        },
+      }),
+      () => ({
+        name: 'error',
+
+        index: async ctx => {
+          ctx.body = ctx.server.monitor.errors;
+        },
+      }),
+    ],
   };
 }

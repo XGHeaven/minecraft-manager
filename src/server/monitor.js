@@ -2,9 +2,16 @@ import { spawn } from 'child_process';
 import byline from 'byline';
 import { monitorLogger as logger } from '../lib/logger';
 
+const MAX_LOG_LINE = 100;
+
 class Monitor {
   process = null;
+
   status = 'stopped';
+  lines = []; // new log push into first element
+  lineStream = null;
+  errors = [];
+  exitCode = 0;
 
   constructor(jar, save, options) {
     this.jar = jar;
@@ -23,8 +30,21 @@ class Monitor {
       cwd: this.save.latestPath,
     });
 
+    this.process.stderr.on('data', data => {
+      this.errors.unshift(data.toString());
+      this.errors.length = Math.min(this.errors.length, MAX_LOG_LINE);
+    });
+
+    this.lineStream = byline(this.process.stdout);
+    this.lineStream.on('data', data => {
+      this.lines.unshift(data.toString());
+      this.lines.length = Math.min(this.lines.length, MAX_LOG_LINE);
+    });
+
     this.process.on('exit', (code, signal) => {
+      this.exitCode = code;
       this.process = null;
+      this.lineStream = null;
       this.status = 'stopped';
     });
 
@@ -52,11 +72,11 @@ class Monitor {
       const callback = (line, lineCount, byteCount) => {
         if (matcher.test(line)) {
           resolve();
-          lineStream.removeListener('data', callback);
+          this.lineStream.removeListener('data', callback);
         }
       };
 
-      const lineStream = byline(this.process.stdout).on('data', callback).once('error', reject);
+      this.lineStream.on('data', callback).once('error', reject);
     });
   }
 
@@ -67,7 +87,7 @@ class Monitor {
     });
   }
 
-  async command(...args) {
+  async send(...args) {
     if (this.process) {
       this.process.stdin.write(args.join(' ') + '\n');
     }

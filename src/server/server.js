@@ -28,7 +28,7 @@ class Server extends Entity {
     this.jar = context.jarManager.get(this.version);
     this.monitor = null;
     this.logger = logger.child({
-      server: name,
+      server: this.name,
     });
     this.monitor = new Monitor(this.jar, this.save_, this.option);
   }
