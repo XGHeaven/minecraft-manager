@@ -27,9 +27,16 @@ const argv = require('yargs')
   })
   .argv
 
+console.log(argv.dir)
 option.basePath = path.join(process.cwd(), argv.dir)
+
+if (path.isAbsolute(argv.dir)) {
+  option.basePath = argv.dir
+}
+
 option.useAPI = !!argv.api
 option.apiPort = argv.api
 
 const mm = new MinecraftManager(option)
+
 mm.start()
