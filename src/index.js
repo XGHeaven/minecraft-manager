@@ -9,6 +9,7 @@ import * as is from 'is-there';
 import { logger, apiLogger } from './lib/logger';
 import _ from 'lodash';
 import * as utils from './lib/utils';
+import mkdirp from 'mkdirp';
 
 const defaultDB = {
   jar: [],
@@ -42,14 +43,20 @@ class MinecraftManager {
     this.dbPath = path.join(this.basePath, this.dbFile);
     this.jarPath = path.join(this.basePath, this.jarFolder);
     this.savePath = path.join(this.basePath, this.saveFolder);
-    this.serverPath = path.join(this.basePath, this.serverFolder);
+
+    if (!is.directory(this.basePath)) {
+      mkdirp.sync(this.basePath);
+      logger.info(`create ${this.basePath}`);
+    }
+
+    logger.info(`use ${this.basePath}`);
 
     if (!is.file(this.dbPath)) {
-      logger.info('cannot find db.json, now creating db.json');
+      logger.info('cannot find db.json, create default file');
       fs.writeFileSync(this.dbPath, JSON.stringify(defaultDB));
     }
 
-    logger.info('read data from db.json');
+    logger.info('loading');
     this.db = JSON.parse(fs.readFileSync(this.dbPath, { encoding: 'utf-8' }));
 
     this.jarManager = new JarManager(this);
@@ -83,7 +90,7 @@ class MinecraftManager {
     this.saveManager.save();
 
     fs.writeFileSync(this.dbPath, JSON.stringify(this.db), { encoding: 'utf-8' });
-    logger.info('db saved');
+    logger.info('saved');
   }
 
   async start() {
@@ -93,6 +100,10 @@ class MinecraftManager {
     if (this.useAPI) {
       await utils.callAsPromise(this.api, 'listen', this.apiPort);
       apiLogger.info('api server listen on %d', this.apiPort);
+    }
+
+    if (!this.useAPI && !this.useRPC) {
+      logger.warn('please enable api or rpc');
     }
 
     logger.info('done!');
