@@ -35,6 +35,10 @@ export default function() {
       },
     ],
 
+    get: async ctx => {
+      ctx.body = ctx.save.toJSONObject();
+    },
+
     update: async ctx => {},
 
     delete: async ctx => {
