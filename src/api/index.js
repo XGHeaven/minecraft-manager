@@ -3,6 +3,7 @@ import BodyParser from 'koa-bodyparser';
 import RouterBuilder from './router';
 import * as boom from 'boom';
 import { apiLogger as logger } from '../lib/logger';
+import cors from 'kcors';
 
 export default function(mm) {
   const app = new Koa();
@@ -17,6 +18,8 @@ export default function(mm) {
     ctx.set('X-Response-Time', `${ms}ms`);
     logger.info(`${ctx.method} ${ctx.url} ${ctx.status} ${ms}ms`);
   });
+
+  app.use(cors());
 
   app.use(BodyParser());
 
