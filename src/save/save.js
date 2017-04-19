@@ -16,6 +16,45 @@ eula=true
 `;
 
 class Save extends Entity {
+  properties = {
+    'max-tick-time': 60000,
+    'generator-settings': '',
+    'force-gamemode': false,
+    'allow-nether': true,
+    gamemode: 0,
+    'enable-query': false,
+    'player-idle-timeout': 0,
+    difficulty: 1,
+    'spawn-monsters': true,
+    'op-permission-level': 4,
+    'announce-player-achievements': true,
+    pvp: true,
+    'snooper-enabled': true,
+    'level-type': 'DEFAULT',
+    hardcore: false,
+    'enable-command-block': false,
+    'max-players': 20,
+    'network-compression-threshold': 256,
+    'resource-pack-sha1': '',
+    'max-world-size': 29999984,
+    'server-port': 25565,
+    'server-ip': '',
+    'spawn-npcs': true,
+    'allow-flight': false,
+    'level-name': 'world',
+    'view-distance': 10,
+    'resource-pack': '',
+    'spawn-animals': true,
+    'white-list': false,
+    'generate-structures': true,
+    'online-mode': false,
+    'max-build-height': 256,
+    'level-seed': '',
+    'prevent-proxy-connections': false,
+    motd: 'A Minecraft Server',
+    'enable-rcon': false,
+  };
+
   constructor(context, name) {
     if (_.isPlainObject(name)) {
       // restore
@@ -55,10 +94,13 @@ class Save extends Entity {
     mkdirp.sync(this.backupPath);
 
     fs.writeFileSync(path.join(this.latestPath, 'eula.txt'), EULA);
+    this.setProperties(this.properties);
   }
 
   link(server) {
     this.server = server;
+    const properties = _.assign({}, this.server.properties, this.properties);
+    this.setProperties(properties);
   }
 
   backup() {
@@ -129,6 +171,14 @@ class Save extends Entity {
 
   message(...args) {
     this.server && this.server.monitor.send('say', args.join(' '));
+  }
+
+  setProperties(properties) {
+    let p = '';
+    for (let [key, value] of Object.entries(properties)) {
+      p += `${key}=${value}\n`;
+    }
+    return fs.writeFileSync(path.join(this.latestPath, 'server.properties'), p);
   }
 }
 

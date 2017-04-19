@@ -13,7 +13,7 @@ class Entity {
       if (this[key] && _.isPlainObject(this[key])) {
         _.merge(this[key], store[key]);
       } else {
-        this[key] = store[key];
+        this[key] = store[key] || this[key];
       }
     }
   }

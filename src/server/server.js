@@ -11,7 +11,22 @@ class Server extends Entity {
     javaXmx: '1G',
   };
 
-  constructor(context, name, version, saveName, option) {
+  properties = {
+    gamemode: 0,
+    difficulty: 1,
+    pvp: true,
+    'enable-command-block': false,
+    'max-players': 20,
+    'server-port': 25565,
+    'server-ip': '',
+    'view-distance': 10,
+    'white-list': false,
+    'online-mode': false,
+    'level-seed': '',
+    motd: 'A Minecraft Server',
+  };
+
+  constructor(context, name, version, saveName, option, properties) {
     if (_.isPlainObject(name)) {
       super(name);
     } else {
@@ -20,6 +35,7 @@ class Server extends Entity {
         version,
         option,
         saveName,
+        properties,
       });
     }
 
@@ -63,6 +79,7 @@ class Server extends Entity {
       saveName: this.save_.name,
       status: this.status,
       options: this.option,
+      properties: this.properties,
     };
   }
 }
