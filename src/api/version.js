@@ -8,7 +8,7 @@ export default function() {
     index: [
       {
         query: {
-          refresh: joi.boolean().required(),
+          refresh: joi.boolean(),
         },
       },
       async ctx => {
