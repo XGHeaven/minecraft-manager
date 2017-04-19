@@ -9,16 +9,17 @@ export default function() {
 
     checker: [
       {
-        resourceId: joi.string().regex(/\d+/),
+        resourceId: joi.string(),
       },
       async (ctx, next) => {
-        const backupName = ctx.params.backup;
+        const backupId = ctx.params.backup;
+        const backup = ctx.save.getBackup(backupId);
 
-        if (!~ctx.save.backups.indexOf(backupName)) {
-          throw boom.resourceGone('there is no backupId ' + backupName);
+        if (!backup) {
+          throw boom.resourceGone('there is no backupId ' + backupId);
         }
 
-        ctx.backupName = backupName;
+        ctx.backup = backup;
         await next();
       },
     ],
@@ -28,17 +29,15 @@ export default function() {
     },
 
     create: async ctx => {
-      ctx.save.backup();
-      ctx.body = {};
+      ctx.body = ctx.save.backup().backup;
     },
 
     get: async ctx => {
-      const backupName = ctx.backupName;
-      ctx.body = ctx.save.getBackup(backupName);
+      ctx.body = ctx.backup;
     },
 
     delete: async ctx => {
-      ctx.save.removeBackup(ctx.backupName);
+      ctx.save.removeBackup(ctx.backup.id);
       ctx.body = {};
     },
   };

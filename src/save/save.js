@@ -9,9 +9,8 @@ import Entity from '../lib/entity';
 
 const debug = require('debug')('MM:Save');
 
-const EULA = `
-#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).
-#${new Date().toLocaleString()}
+const EULA = `#By changing the setting below to TRUE you are indicating your agreement to our EULA (https://account.mojang.com/documents/minecraft_eula).
+#${new Date().toString()}
 eula=true
 `;
 
@@ -54,6 +53,8 @@ class Save extends Entity {
     motd: 'A Minecraft Server',
     'enable-rcon': false,
   };
+
+  status = 'normal';
 
   constructor(context, name) {
     if (_.isPlainObject(name)) {
@@ -103,26 +104,42 @@ class Save extends Entity {
     this.setProperties(properties);
   }
 
-  backup() {
+  // pseudo async function
+  backup(backupId) {
     if (this._backupPromise) return this._backupPromise;
     this.message('server will start backup');
+    this.status = 'backup';
 
-    const backupName = new Date().getTime().toString();
-    this.backups.push(backupName);
+    backupId = backupId || new Date().getTime().toString();
+    const startTime = new Date().getTime();
+    let backup = this.getBackup(backupId);
+
+    if (!backup) {
+      backup = {
+        id: backupId,
+        size: 0,
+        createTime: null,
+        usageTime: 0,
+      };
+      this.backups.push(backup);
+    }
+
     this._backupPromise = utils
-      .compressFolder(this.latestPath, path.join(this.backupPath, `${backupName}.zip`), total => {
-        this._backupPromise.progress.total = total;
+      .compressFolder(this.latestPath, this.getBackupFilePath(backupId), total => {
+        backup.size = total;
         debug(`${total} compressed`);
       })
-      .then(() => backupName);
+      .then(() => backup);
 
-    this._backupPromise.progress = {
-      total: 0,
-    };
-
-    this._backupPromise.then(backupName => {
-      this.message('server backup successful! id:' + backupName);
+    this._backupPromise.then(backup => {
+      this.message('server backup successful! id:' + backupId);
+      this.status = 'normal';
+      backup.createTime = new Date().getTime();
+      backup.usageTime = backup.createTime - startTime;
+      this._backupPromise = null;
     });
+
+    this._backupPromise.backup = backup;
 
     return this._backupPromise;
   }
@@ -132,37 +149,47 @@ class Save extends Entity {
       name: this.name,
       backups: this.backups,
       autoBackup: this.autoBackup,
+      status: this.status,
     };
   }
 
-  getBackup(backupName) {
-    const filePath = this.getBackupFilePath(backupName);
-    if (!is.file(filePath))
-      return {
-        filePath,
-        backupName,
-        status: null,
-      };
-
-    const backupStat = fs.statSync(this.getBackupFilePath(backupName));
-
-    return {
-      filePath,
-      backupName,
-      size: backupStat.size,
-      createTime: backupStat.ctime.getTime(),
-    };
+  getBackup(backupId) {
+    const backup = _.find(this.backups, backup => backup.id === backupId);
+    return backup || null;
   }
 
-  getBackupFilePath(backupName) {
-    return path.join(this.backupPath, backupName + '.zip');
+  getBackupFilePath(backupId) {
+    return path.join(this.backupPath, backupId + '.zip');
   }
 
-  removeBackup(backupName) {
-    rimraf.sync(this.getBackupFilePath(backupName));
-    if (~this.backups.indexOf(backupName)) {
-      this.backups.splice(this.backups.indexOf(backupName), 1);
+  removeBackup(backupId) {
+    const backup = this.getBackup(backupId);
+    if (backup) {
+      rimraf.sync(this.getBackupFilePath(backupId));
+      _.pull(this.backups, backup);
     }
+  }
+
+  async useBackup(backupId) {
+    //TODO: check server status
+    const backup = this.getBackup(backupId);
+
+    if (!backup) return false;
+
+    await this._backupPromise;
+    await this.backup('latest');
+
+    this.status = 'rollback';
+
+    rimraf.sync(this.latestPath);
+    mkdirp.sync(this.latestPath);
+
+    this._backupPromise = utils.decompressFolder(this.getBackupFilePath(backupId), this.latestPath);
+    await this._backupPromise;
+    this._backupPromise = null;
+
+    this.status = 'normal';
+    return true;
   }
 
   remove() {

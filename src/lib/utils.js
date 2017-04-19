@@ -1,5 +1,6 @@
 import fs from 'fs';
 import archiver from 'archiver';
+import decompress from 'decompress';
 
 const VERSIONREG = /^[\d]+\.[\d]+(\.[\d]+)?$/;
 
@@ -40,6 +41,10 @@ export function compressFolder(from, to, onProgress) {
     archive.on('end', resolve);
     archive.on('error', reject);
   });
+}
+
+export function decompressFolder(from, to) {
+  return decompress(from, to);
 }
 
 export function isVersion(version) {

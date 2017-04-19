@@ -39,7 +39,20 @@ export default function() {
       ctx.body = ctx.save.toJSONObject();
     },
 
-    update: async ctx => {},
+    update: [
+      {
+        body: {
+          backup: joi.string(),
+        },
+      },
+      async ctx => {
+        if (ctx.request.body.backup) {
+          ctx.save.useBackup(ctx.request.body.backup);
+        }
+
+        ctx.body = ctx.save.toJSONObject();
+      },
+    ],
 
     delete: async ctx => {
       //TODO: check server is using this save

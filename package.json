@@ -29,6 +29,7 @@
     "bunyan-format": "^0.2.1",
     "byline": "^5.0.0",
     "debug": "^2.6.3",
+    "decompress": "^4.0.0",
     "is-there": "^4.4.1",
     "joi": "^10.3.1",
     "kcors": "^2.2.1",
