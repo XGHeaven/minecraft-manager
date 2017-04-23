@@ -1,9 +1,5 @@
 import * as boom from 'boom';
-import * as joi from 'joi';
-
-const vad = {
-  version: joi.string().regex(/^\d+\.\d+(\.\d+)?$/, 'minecraft version'),
-};
+import joi from '../lib/joi';
 
 export default function() {
   return {
@@ -11,13 +7,13 @@ export default function() {
 
     checker: [
       {
-        resourceId: vad.version,
+        resourceId: joi.string().version(),
       },
       async (ctx, next) => {
         const version = ctx.params.jar;
         const jar = ctx.context.jarManager.get(version);
         if (!jar) {
-          throw boom.resourceGone(`jar ${version} not created`);
+          throw boom.notFound(`jar ${version} not created`);
         }
         ctx.jar = jar;
         await next();
@@ -25,19 +21,13 @@ export default function() {
     ],
 
     index: async function(ctx) {
-      const jars = [];
-
-      ctx.context.jarManager.forEach(jar => {
-        jars.push(jar.toJSONObject());
-      });
-
-      ctx.body = jars;
+      ctx.body = ctx.context.jarManager.toJSONObject();
     },
 
     create: [
       {
         body: {
-          version: vad.version.required(),
+          version: joi.string().version().required(),
         },
       },
       async ctx => {
@@ -47,6 +37,7 @@ export default function() {
           throw boom.badData('invalid version');
         }
 
+        ctx.status = ctx.context.jarManager.get(version) ? 200 : 201;
         ctx.body = ctx.context.jarManager.create(version).toJSONObject();
       },
     ],
@@ -85,8 +76,10 @@ export default function() {
     },
 
     delete: async ctx => {
-      ctx.jar.remove();
-      ctx.body = {};
+      if (!ctx.jar.remove()) {
+        throw boom.preconditionRequired('remove jar after remove server');
+      }
+      ctx.body = void 0;
     },
   };
 }

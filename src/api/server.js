@@ -1,23 +1,19 @@
 import boom from 'boom';
-import joi from 'joi';
+import joi from '../lib/joi';
 import _ from 'lodash';
-
-const vad = {
-  version: joi.string().regex(/^\d+\.\d+(\.\d+)?$/, 'minecraft version'),
-};
 
 export default function() {
   return {
     name: 'server',
     checker: [
       {
-        resourceId: joi.string().required(),
+        resourceId: joi.string().token().required(),
       },
       async function(ctx, next) {
         const name = ctx.params.server;
         const server = ctx.context.serverManager.get(name);
         if (server === null) {
-          throw boom.resourceGone(`server ${name} not create`);
+          throw boom.notFound(`server ${name} not create`);
         }
         ctx.server = server;
         await next();
@@ -37,9 +33,9 @@ export default function() {
     create: [
       {
         body: {
-          name: joi.string().required(),
-          version: vad.version.required(),
-          save: joi.string().required(),
+          name: joi.string().token().required(),
+          version: joi.string().version().required(),
+          save: joi.string().token().required(),
           options: joi.object({
             javaXms: joi.string(),
             javaXmx: joi.string(),
@@ -92,7 +88,13 @@ export default function() {
       },
     ],
 
-    delete: async ctx => {},
+    delete: async ctx => {
+      if (!ctx.server.remove()) {
+        throw boom.preconditionRequired('remove server when server stopped');
+      }
+
+      ctx.body = void 0;
+    },
 
     children: [
       () => ({

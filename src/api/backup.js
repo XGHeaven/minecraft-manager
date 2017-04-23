@@ -9,7 +9,7 @@ export default function() {
 
     checker: [
       {
-        resourceId: joi.string(),
+        resourceId: joi.string().token(),
       },
       async (ctx, next) => {
         const backupId = ctx.params.backup;

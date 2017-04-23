@@ -192,8 +192,14 @@ class Save extends Entity {
     return true;
   }
 
-  remove() {
-    rimraf.sync(this.path);
+  remove(onlySelf) {
+    if (this.isUsed()) return false;
+    if (onlySelf) {
+      rimraf.sync(this.path);
+    } else {
+      this.context.saveManager.remove(this);
+    }
+    return true;
   }
 
   message(...args) {
@@ -206,6 +212,14 @@ class Save extends Entity {
       p += `${key}=${value}\n`;
     }
     return fs.writeFileSync(path.join(this.latestPath, 'server.properties'), p);
+  }
+
+  isUsed() {
+    return this.context.serverManager.usedSave(this);
+  }
+
+  isUsing() {
+    return !!this.server;
   }
 }
 

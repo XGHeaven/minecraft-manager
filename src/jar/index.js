@@ -1,31 +1,36 @@
 import Jar from './jar';
-import { transparentMethod } from '../lib/decorator';
 import mkdirp from 'mkdirp';
 import request from 'request-promise-native';
 import { jarLogger as logger } from '../lib/logger';
 import is from 'is-there';
+import Manager from '../lib/manager';
 
-class JarManager {
-  @transparentMethod('get', 'forEach', 'delete')
-  jars = new Map();
-  version = null;
-
+class JarManager extends Manager {
   constructor(context) {
-    this.context = context;
-    this.db = context.db;
+    super(context);
     this.store = this.db.jar;
 
     this.version = this.db.version;
   }
 
   create(version) {
-    let jar = this.jars.get(version);
+    let jar = this.get(version);
     if (!jar) {
       jar = new Jar(this.context, version);
-      this.jars.set(version, jar);
+      this.set(version, jar);
       this.store.push(jar.store);
     }
     return jar;
+  }
+
+  remove(jar) {
+    if (typeof jar === 'string') {
+      jar = this.get(jar);
+    }
+    if (!jar.remove(true)) return false;
+    this.delete(jar.version);
+    this.store.splice(this.store.indexOf(jar.store, 1));
+    return true;
   }
 
   async init() {
@@ -34,7 +39,7 @@ class JarManager {
     }
 
     for (let store of this.store) {
-      this.jars.set(store.version, new Jar(this.context, store));
+      this.set(store.version, new Jar(this.context, store));
     }
 
     if (this.context.setupOption.updateJarVersion || (!this.context.test && !this.version.updateTime)) {
@@ -46,7 +51,7 @@ class JarManager {
   }
 
   save() {
-    this.forEach(jar => jar.save());
+    super.save();
     this.context.db.version = this.version; // this only used for first called
     return this;
   }
@@ -57,6 +62,9 @@ class JarManager {
       url: this.context.downloadServer + '/mc/game/version_manifest.json',
       json: true,
     });
+    this.version.versions = this.version.versions.filter(
+      version => version.type === 'release' || version.type === 'snapshot',
+    );
     this.version.updateTime = new Date();
     logger.info('update success');
     return this;

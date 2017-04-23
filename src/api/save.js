@@ -1,4 +1,4 @@
-import joi from 'joi';
+import joi from '../lib/joi';
 import boom from 'boom';
 
 export default function() {
@@ -7,12 +7,12 @@ export default function() {
 
     checker: [
       {
-        resourceId: joi.string(),
+        resourceId: joi.string().token(),
       },
       async (ctx, next) => {
         const name = ctx.params.save, save = ctx.context.saveManager.get(name);
 
-        if (!save) throw boom.resourceGone('save not created');
+        if (!save) throw boom.notFound('save not created');
 
         ctx.save = save;
         await next();
@@ -26,7 +26,7 @@ export default function() {
     create: [
       {
         body: {
-          name: joi.string().required(),
+          name: joi.string().token().required(),
         },
       },
       async ctx => {
@@ -42,11 +42,11 @@ export default function() {
     update: [
       {
         body: {
-          backup: joi.string(),
+          backup: joi.string().token(),
         },
       },
       async ctx => {
-        if (ctx.request.body.backup) {
+        if (ctx.request.body.backup && ctx.save.getBackup(ctx.request.body.backup)) {
           ctx.save.useBackup(ctx.request.body.backup);
         }
 
@@ -55,9 +55,11 @@ export default function() {
     ],
 
     delete: async ctx => {
-      //TODO: check server is using this save
-      ctx.save.remove();
-      ctx.body = {};
+      if (!ctx.save.remove()) {
+        throw boom.preconditionRequired('remove save after remove server');
+      }
+
+      ctx.body = void 0;
     },
 
     children: [require('./backup')],

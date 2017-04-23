@@ -110,14 +110,27 @@ class Jar extends Entity {
     };
   }
 
-  remove() {
-    if (this._installPromise) this._installPromise.cancel();
-    this.context.jarManager.delete(this.version);
-    rimraf.sync(this.jarFilePath);
+  remove(onlySelf) {
+    if (this.isUsed()) return false;
+    if (!onlySelf) {
+      return this.context.jarManager.remove(this);
+    } else {
+      if (this._installPromise) this._installPromise.cancel();
+      rimraf.sync(this.jarFilePath);
+      return true;
+    }
   }
 
   removeJar() {
     rimraf.sync(this.jarFilePath);
+  }
+
+  isUsed() {
+    return this.context.serverManager.usedJar(this);
+  }
+
+  isUsing() {
+    return this.context.serverManager.usedJar(this, true);
   }
 }
 

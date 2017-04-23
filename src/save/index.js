@@ -1,30 +1,26 @@
 import Save from './save';
-import { transparentMethod } from '../lib/decorator';
 import mkdirp from 'mkdirp';
+import Manager from '../lib/manager';
 
-class SaveManager {
-  @transparentMethod('get', 'forEach', 'delete')
-  saves = new Map();
-
+class SaveManager extends Manager {
   constructor(context) {
-    this.context = context;
-    this.db = context.db;
+    super(context);
     this.store = this.db.save;
   }
 
   async init() {
     for (let store of this.db.save) {
-      this.saves.set(store.name, new Save(this.context, store));
+      this.set(store.name, new Save(this.context, store));
     }
 
     mkdirp.sync(this.context.savePath);
   }
 
   create(name) {
-    let save = this.saves.get(name);
+    let save = this.get(name);
     if (!save) {
       save = new Save(this.context, name);
-      this.saves.set(name, save);
+      this.set(name, save);
       this.store.push(save.store);
     }
     return save;
@@ -34,21 +30,10 @@ class SaveManager {
     if (typeof save === 'string') {
       save = this.get(save);
     }
-    save.remove();
-    this.saves.delete(save.name);
-  }
-
-  save() {
-    this.forEach(save => save.save());
-    return this;
-  }
-
-  toJSONObject() {
-    const saves = [];
-    this.forEach(save => {
-      saves.push(save.toJSONObject());
-    });
-    return saves;
+    if (!save.remove(true)) return false;
+    this.delete(save.name);
+    this.store.splice(this.store.indexOf(save));
+    return true;
   }
 }
 

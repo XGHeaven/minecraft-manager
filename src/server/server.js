@@ -72,6 +72,15 @@ class Server extends Entity {
     return this.monitor.status || 'stopped';
   }
 
+  remove(onlySelf) {
+    if (this.status !== 'stopped') return false;
+    if (onlySelf) {
+      return true;
+    } else {
+      return this.context.serverManager.remove(this);
+    }
+  }
+
   toJSONObject() {
     return {
       name: this.name,
