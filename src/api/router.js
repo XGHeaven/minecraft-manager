@@ -11,6 +11,7 @@ export default function() {
   api.use(rest(require('./jar')).routes());
   api.use(rest(require('./save')).routes());
   api.use(rest(require('./version')).routes());
+  api.get('/event', require('./sse').default);
 
   router.use('/api', api.routes());
 

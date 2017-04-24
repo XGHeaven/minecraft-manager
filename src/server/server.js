@@ -2,6 +2,7 @@ import Monitor from './monitor';
 import { serverLogger as logger } from '../lib/logger';
 import _ from 'lodash';
 import Entity from '../lib/entity';
+import { event } from '../lib/event';
 
 class Server extends Entity {
   process = null;
@@ -53,14 +54,24 @@ class Server extends Entity {
     this.save_.link(this);
     this.logger.info('starting');
     const res = await this.monitor.start();
+    event('server-start', {
+      result: res,
+      server: this.name,
+    });
     this.logger.info('started');
     return res;
   }
 
   async stop() {
-    this.logger.info('stopped');
+    this.logger.info('stopping');
     this.save_.link(null);
-    return await this.monitor.stop();
+    const res = await this.monitor.stop();
+    event('server-stop', {
+      result: res,
+      server: this.name,
+    });
+    this.logger.info('stopped');
+    return res;
   }
 
   async restart() {

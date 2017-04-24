@@ -6,6 +6,7 @@ import * as utils from '../lib/utils';
 import rimraf from 'rimraf';
 import _ from 'lodash';
 import Entity from '../lib/entity';
+import { event } from '../lib/event';
 
 const debug = require('debug')('MM:Save');
 
@@ -137,6 +138,11 @@ class Save extends Entity {
       backup.createTime = new Date().getTime();
       backup.usageTime = backup.createTime - startTime;
       this._backupPromise = null;
+      event('save-backup', {
+        result: true,
+        save: this.name,
+        backup,
+      });
     });
 
     this._backupPromise.backup = backup;
@@ -177,6 +183,10 @@ class Save extends Entity {
     if (!backup) return false;
 
     await this._backupPromise;
+    event('save-start-rollback', {
+      save: this.name,
+      backup,
+    });
     await this.backup('latest');
 
     this.status = 'rollback';
@@ -187,6 +197,11 @@ class Save extends Entity {
     this._backupPromise = utils.decompressFolder(this.getBackupFilePath(backupId), this.latestPath);
     await this._backupPromise;
     this._backupPromise = null;
+    event('save-rollback', {
+      result: true,
+      save: this.name,
+      backup,
+    });
 
     this.status = 'normal';
     return true;

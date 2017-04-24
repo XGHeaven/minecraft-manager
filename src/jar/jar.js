@@ -5,6 +5,7 @@ import { jarLogger as logger } from '../lib/logger';
 import rimraf from 'rimraf';
 import Entity from '../lib/entity';
 import _ from 'lodash';
+import { event } from '../lib/event';
 
 const debug = require('debug')('MM:JarManager:Jar');
 
@@ -69,11 +70,19 @@ class Jar extends Entity {
         .on('end', () => {
           debug('end');
           this._installPromise = null;
+          event('jar-download', {
+            result: true,
+            version: this.version,
+          });
           resolve();
         })
         .on('error', err => {
           debug('error', err);
           this._installPromise = null;
+          event('jar-download', {
+            result: false,
+            version: this.version,
+          });
           reject(err);
         });
 
