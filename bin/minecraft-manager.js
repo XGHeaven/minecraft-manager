@@ -6,13 +6,12 @@ const path = require('path')
 const debug = require('debug')('MM:bin')
 const logger = require('../dist/lib/logger').Logger
 
-const MinecraftManager = require('../').default
-
 const option = {
 }
 
 const argv = require('yargs')
   .usage('Usage $0 [option]')
+  .version()
   .option('dir', {
     alias: 'd',
     desc: 'where base directory',
@@ -26,6 +25,8 @@ const argv = require('yargs')
     default: 0,
   })
   .argv
+
+const MinecraftManager = require('../').default
 
 console.log(argv.dir)
 option.basePath = path.join(process.cwd(), argv.dir)
