@@ -101,6 +101,7 @@ class Save extends Entity {
 
   link(server) {
     this.server = server;
+    if (server === null) return;
     const properties = _.assign({}, this.server.properties, this.properties);
     this.setProperties(properties);
   }
