@@ -34,7 +34,7 @@ export default function(mm) {
     }
   });
 
-  app.use(RouterBuilder());
+  app.use(RouterBuilder(mm));
 
   return app;
 }

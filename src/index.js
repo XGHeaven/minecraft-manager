@@ -34,6 +34,7 @@ class MinecraftManager {
   setupOption = {
     updateJarVersion: false,
   };
+  auth = null;
 
   test = process.env.NODE_ENV === 'test';
 

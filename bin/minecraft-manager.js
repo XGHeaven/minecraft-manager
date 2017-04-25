@@ -20,9 +20,13 @@ const argv = require('yargs')
   })
   .option('api', {
     alias: 'I',
-    desc: 'which port for api listen, 0 for not listen',
+    desc: 'which port for api listen',
     type: 'number',
-    default: 0,
+    default: 8080,
+  })
+  .option('auth', {
+    desc: 'username for api auth, [name]:[pwd]',
+    type: 'string'
   })
   .argv
 
@@ -37,6 +41,14 @@ if (path.isAbsolute(argv.dir)) {
 
 option.useAPI = !!argv.api
 option.apiPort = argv.api
+
+if (argv.auth) {
+  let auth = argv.auth.split(':')
+  option.auth = {
+    name: auth[0],
+    pwd: auth[1]
+  }
+}
 
 const mm = new MinecraftManager(option)
 
