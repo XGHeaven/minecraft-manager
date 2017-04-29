@@ -26,14 +26,14 @@ export function event(event, data = null) {
   bus.write(new Event(event, data));
 }
 
-export function stream(lastTime = 60 * 1000) {
+export function events(lastTime = 60 * 1000, from = bus) {
   const sub = new PassThrough();
 
-  bus.pipe(sub);
+  from.pipe(sub);
 
   setTimeout(
     () => {
-      bus.unpipe(sub);
+      from.unpipe(sub);
       sub.end();
     },
     lastTime,

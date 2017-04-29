@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import byline from 'byline';
 import { monitorLogger as logger } from '../lib/logger';
+import Console from './console';
 
 const MAX_LOG_LINE = 100;
 
@@ -9,7 +10,7 @@ class Monitor {
 
   status = 'stopped';
   lines = []; // new log push into first element
-  lineStream = null;
+  console = new Console();
   errors = [];
   exitCode = 0;
 
@@ -17,6 +18,10 @@ class Monitor {
     this.jar = jar;
     this.save = save;
     this.options = options;
+    this.console.on('data', data => {
+      this.lines.unshift(data);
+      this.lines.length = Math.min(this.lines.length, MAX_LOG_LINE);
+    });
   }
 
   async start() {
@@ -35,16 +40,12 @@ class Monitor {
       this.errors.length = Math.min(this.errors.length, MAX_LOG_LINE);
     });
 
-    this.lineStream = byline(this.process.stdout);
-    this.lineStream.on('data', data => {
-      this.lines.unshift(data.toString());
-      this.lines.length = Math.min(this.lines.length, MAX_LOG_LINE);
-    });
+    const nLineStream = byline(this.process.stdout);
+    nLineStream.on('data', data => this.console.write(data));
 
     this.process.on('exit', (code, signal) => {
       this.exitCode = code;
       this.process = null;
-      this.lineStream = null;
       this.status = 'stopped';
     });
 
@@ -69,14 +70,14 @@ class Monitor {
 
   async wait(matcher) {
     return new Promise((resolve, reject) => {
-      const callback = (line, lineCount, byteCount) => {
-        if (matcher.test(line)) {
+      const callback = log => {
+        if (matcher.test(log.message)) {
           resolve();
-          this.lineStream.removeListener('data', callback);
+          this.console.removeListener('data', callback);
         }
       };
 
-      this.lineStream.on('data', callback).once('error', reject);
+      this.console.on('data', callback).once('error', reject);
     });
   }
 
@@ -90,6 +91,7 @@ class Monitor {
   async send(...args) {
     if (this.process) {
       this.process.stdin.write(args.join(' ') + '\n');
+      this.console.send(args.join(' '));
     }
   }
 }

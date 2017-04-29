@@ -1,6 +1,7 @@
 import boom from 'boom';
 import joi from '../lib/joi';
 import _ from 'lodash';
+import { events } from '../lib/event';
 
 export default function() {
   return {
@@ -64,11 +65,13 @@ export default function() {
 
     update: [
       {
-        status: joi.string().valid('start', 'stop').required(),
-        options: joi.object({
-          javaXmx: joi.string(),
-          javaXms: joi.string(),
-        }),
+        body: {
+          status: joi.string().valid('start', 'stop').required(),
+          options: joi.object({
+            javaXmx: joi.string(),
+            javaXms: joi.string(),
+          }),
+        },
       },
       async function(ctx) {
         const status = ctx.request.body.status;
@@ -98,12 +101,28 @@ export default function() {
 
     children: [
       () => ({
-        name: 'log',
+        name: 'console',
 
         index: async ctx => {
           ctx.body = ctx.server.monitor.lines;
         },
+        create: [
+          {
+            body: {
+              command: joi.string().required(),
+            },
+          },
+          async ctx => {
+            await ctx.server.monitor.send(ctx.request.body.command);
+            ctx.body = void 0;
+          },
+        ],
+        get: async ctx => {
+          ctx.type = 'text/event-stream';
+          ctx.body = events(60 * 1000, ctx.server.monitor.console.eventStream);
+        },
       }),
+
       () => ({
         name: 'error',
 

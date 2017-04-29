@@ -1,6 +1,6 @@
-import { stream } from '../lib/event';
+import { events } from '../lib/event';
 
 export default async ctx => {
   ctx.type = 'text/event-stream';
-  ctx.body = stream();
+  ctx.body = events();
 };
