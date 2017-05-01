@@ -3,6 +3,7 @@ import { serverLogger as logger } from '../lib/logger';
 import _ from 'lodash';
 import Entity from '../lib/entity';
 import { event } from '../lib/event';
+import Mutex from '../lib/mutex';
 
 class Server extends Entity {
   process = null;
@@ -26,6 +27,8 @@ class Server extends Entity {
     'level-seed': '',
     motd: 'A Minecraft Server',
   };
+
+  l = new Mutex(60 * 1000);
 
   constructor(context, name, version, saveName, option, properties) {
     if (_.isPlainObject(name)) {
@@ -51,6 +54,7 @@ class Server extends Entity {
   }
 
   async start() {
+    await this.l.lock();
     this.save_.link(this);
     this.logger.info('starting');
     const res = await this.monitor.start();
@@ -59,10 +63,12 @@ class Server extends Entity {
       server: this.name,
     });
     this.logger.info('started');
+    await this.l.unlock();
     return res;
   }
 
   async stop() {
+    await this.l.lock();
     this.logger.info('stopping');
     this.save_.link(null);
     const res = await this.monitor.stop();
@@ -71,6 +77,7 @@ class Server extends Entity {
       server: this.name,
     });
     this.logger.info('stopped');
+    await this.l.unlock();
     return res;
   }
 

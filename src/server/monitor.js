@@ -27,6 +27,10 @@ class Monitor {
   async start() {
     if (this.status === 'started') return true;
     if (this.status !== 'stopped') return false;
+    if (!this.jar.installed) {
+      this.status = 'installing';
+      await this.jar.install();
+    }
     this.status = 'starting';
 
     const argv = [`-Xms${this.options.javaXms}`, `-Xmx${this.options.javaXmx}`, '-jar', this.jar.jarFilePath, 'nogui'];
@@ -39,6 +43,9 @@ class Monitor {
       this.errors.unshift(data.toString());
       this.errors.length = Math.min(this.errors.length, MAX_LOG_LINE);
     });
+
+    this.process.stderr.pipe(process.stderr);
+    this.process.stdout.pipe(process.stdout);
 
     const nLineStream = byline(this.process.stdout);
     nLineStream.on('data', data => this.console.write(data));
@@ -69,7 +76,7 @@ class Monitor {
   }
 
   async wait(matcher) {
-    return new Promise((resolve, reject) => {
+    await new Promise((resolve, reject) => {
       const callback = log => {
         if (matcher.test(log.message)) {
           resolve();

@@ -6,10 +6,13 @@ import rimraf from 'rimraf';
 import Entity from '../lib/entity';
 import _ from 'lodash';
 import { event } from '../lib/event';
+import Mutex from '../lib/mutex';
 
 const debug = require('debug')('MM:JarManager:Jar');
 
 class Jar extends Entity {
+  l = new Mutex(300 * 1000);
+
   constructor(context, version) {
     if (_.isPlainObject(version)) {
       super(version);
@@ -31,9 +34,9 @@ class Jar extends Entity {
     return is.file(this.jarFilePath) && !this._installPromise;
   }
 
-  install(forceInstall) {
-    if (!forceInstall && this.installed) return Promise.resolve();
-    if (this._installPromise) return this._installPromise;
+  async install(forceInstall = false) {
+    await this.l.lock();
+    if (!forceInstall && this.installed) return false;
 
     this.logger.info('start download');
 
@@ -102,7 +105,9 @@ class Jar extends Entity {
       updateTime: null,
     };
 
-    return this._installPromise;
+    await download;
+    await this.l.unlock();
+    return true;
   }
 
   get status() {

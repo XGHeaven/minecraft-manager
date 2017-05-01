@@ -1,0 +1,39 @@
+import _ from 'lodash';
+import { logger } from './logger';
+
+export default class Mutex {
+  promises = [Promise.resolve()];
+  timeout = 60 * 1000;
+
+  constructor(timeout) {
+    this.timeout = timeout;
+  }
+
+  async lock(timeout) {
+    const pre = _.last(this.promises);
+    const promise = new Promise((resolve, reject) => {
+      Object.assign(pre, { resolve, reject });
+    });
+
+    this.promises.push(promise);
+    await Promise.all(_.dropRight(this.promises, 1));
+
+    setTimeout(
+      () => {
+        logger.warn('Mutex Timeout');
+      },
+      timeout || this.timeout,
+    );
+  }
+
+  async unlock() {
+    const h = _.pullAt(this.promises, 0)[0];
+    if (h.resolve) h.resolve();
+    else this.promises.push(h);
+  }
+
+  async unUse() {
+    await this.lock();
+    await this.unlock();
+  }
+}

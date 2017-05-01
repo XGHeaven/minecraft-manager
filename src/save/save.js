@@ -7,6 +7,7 @@ import rimraf from 'rimraf';
 import _ from 'lodash';
 import Entity from '../lib/entity';
 import { event } from '../lib/event';
+import Mutex from '../lib/mutex';
 
 const debug = require('debug')('MM:Save');
 
@@ -56,6 +57,9 @@ class Save extends Entity {
   };
 
   status = 'normal';
+
+  // 10 minute
+  l = new Mutex(600 * 1000);
 
   constructor(context, name) {
     if (_.isPlainObject(name)) {
@@ -107,8 +111,8 @@ class Save extends Entity {
   }
 
   // pseudo async function
-  backup(backupId) {
-    if (this._backupPromise) return this._backupPromise;
+  async backup(backupId) {
+    await this.l.lock();
     this.message('server will start backup');
     this.status = 'backup';
 
@@ -148,7 +152,9 @@ class Save extends Entity {
 
     this._backupPromise.backup = backup;
 
-    return this._backupPromise;
+    let result = await this._backupPromise;
+    await this.l.unlock();
+    return result;
   }
 
   toJSONObject() {
@@ -183,12 +189,22 @@ class Save extends Entity {
 
     if (!backup) return false;
 
-    await this._backupPromise;
+    // stop server
+    let beforeStatus = 'stopped', server = this.server;
+    if (server) {
+      await server.l.unUse();
+      beforeStatus = server.status;
+      await server.stop();
+    }
+
+    await this.l.lock();
     event('save-start-rollback', {
       save: this.name,
       backup,
     });
+    await this.l.unlock();
     await this.backup('latest');
+    await this.l.lock();
 
     this.status = 'rollback';
 
@@ -205,6 +221,9 @@ class Save extends Entity {
     });
 
     this.status = 'normal';
+    await this.l.unlock();
+
+    if (server && beforeStatus === 'started') await server.start();
     return true;
   }
 

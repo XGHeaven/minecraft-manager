@@ -1,6 +1,8 @@
 import { Duplex } from 'stream';
 import { Event } from '../lib/event';
+import Debug from 'debug';
 
+const debug = Debug('MM:ServerManager:Console');
 const logReg = /^\[(\d{2}:\d{2}:\d{2})] \[(.+)\/(\w+)]: (.+)$/;
 
 class Console extends Duplex {
@@ -40,7 +42,11 @@ class Log {
         this.time = `${('0' + time.getHours()).slice(-2)}:${('0' + time.getMinutes()).slice(-2)}:${('0' + time.getSeconds()).slice(-2)}`;
         break;
       default:
-        const match = log.match(logReg);
+        let match = log.match(logReg);
+        if (match === null) {
+          match = [];
+          debug(log);
+        }
         this.time = match[1];
         this.name = match[2];
         this.type = match[3];
