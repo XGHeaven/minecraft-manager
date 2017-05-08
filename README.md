@@ -1,5 +1,7 @@
 # Minecraft Manager
 
+[中文](README_ZH.md)
+
 When you have a vps, you want to be more convenient to manage the Minecraft server,
 including saves, game versions, permissions, etc..
 just need to use web gui, do not need any programming skills.
