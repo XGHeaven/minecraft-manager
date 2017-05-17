@@ -31,6 +31,8 @@ class Server extends Entity {
 
   l = new Mutex(60 * 1000);
 
+  status = 'stopped';
+
   constructor(context, name, version, saveName, option = {}) {
     if (_.isPlainObject(name)) {
       super(name);
@@ -52,7 +54,6 @@ class Server extends Entity {
     assert.ok(this.save_ instanceof Save, 'save is undefined');
     assert.ok(this.jar instanceof Jar, 'jar is undefined');
 
-    this.monitor = null;
     this.logger = logger.child({
       server: this.name,
     });
@@ -60,24 +61,30 @@ class Server extends Entity {
   }
 
   async start() {
+    this.status = 'installing';
     await this.l.lock();
-    if (!this.jar.installed) await this.jar.install();
+    if (!this.jar.installed) {
+      await this.jar.install();
+    }
+    this.status = 'starting';
+    this.logger.info('starting');
     this.monitor.options = this.option;
     this.save_.link(this);
-    this.logger.info('starting');
     const res = await this.monitor.start();
     event('server-start', {
       result: res,
       server: this.name,
     });
     this.logger.info('started');
+    this.status = 'started';
     await this.l.unlock();
     return res;
   }
 
   async stop() {
-    await this.l.lock();
     this.logger.info('stopping');
+    this.status = 'stopping';
+    await this.l.lock();
     this.save_.link(null);
     const res = await this.monitor.stop();
     event('server-stop', {
@@ -85,6 +92,7 @@ class Server extends Entity {
       server: this.name,
     });
     this.logger.info('stopped');
+    this.status = 'stopped';
     await this.l.unlock();
     return res;
   }
@@ -92,10 +100,6 @@ class Server extends Entity {
   async restart() {
     await this.stop();
     await this.start();
-  }
-
-  get status() {
-    return this.monitor.status || 'stopped';
   }
 
   remove(onlySelf) {
