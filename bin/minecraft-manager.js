@@ -12,6 +12,10 @@ const option = {
 const argv = require('yargs')
   .usage('Usage $0 [option]')
   .version()
+  .alias('v', 'version')
+  .env('MM')
+  .config('config', 'config json file')
+  .alias('c', 'config')
   .option('dir', {
     alias: 'd',
     desc: 'where base directory',
@@ -25,7 +29,7 @@ const argv = require('yargs')
     default: 8080,
   })
   .option('auth', {
-    desc: 'username for api auth, [name]:[pwd]',
+    desc: 'username for api auth, name:pwd',
     type: 'string'
   })
   .argv
