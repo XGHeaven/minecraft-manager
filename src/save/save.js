@@ -50,7 +50,7 @@ class Save extends Entity {
     'generate-structures': true,
     'online-mode': false,
     'max-build-height': 256,
-    'level-seed': '',
+    'level-seed': 0,
     'prevent-proxy-connections': false,
     motd: 'A Minecraft Server',
     'enable-rcon': false,
@@ -106,7 +106,7 @@ class Save extends Entity {
   link(server) {
     this.server = server;
     if (server === null) return;
-    const properties = _.assign({}, this.server.properties, this.properties);
+    const properties = _.assign({}, this.properties, this.server.option.properties);
     this.setProperties(properties);
   }
 

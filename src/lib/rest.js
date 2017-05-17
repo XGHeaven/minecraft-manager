@@ -1,5 +1,5 @@
 import Router from 'koa-router';
-import joi from 'joi';
+import joi from './joi';
 import boom from 'boom';
 
 export default function rest(RouteBuilder) {
@@ -47,16 +47,19 @@ function makeRouter(name, handle) {
     return [
       async (ctx, next) => {
         try {
-          validator.body && joi.attempt(ctx.request.body, validator.body);
-          validator.header && joi.attempt(ctx.headers, validator.header);
-          validator.query && joi.attempt(ctx.query, validator.query);
-          validator.resourceId &&
-            joi.attempt(ctx.param, {
-              [name]: validator.resourceId.required(),
-            });
+          validate(ctx.request.body, validator.body);
+          validate(ctx.headers, validator.header);
+          validate(ctx.query, validator.query);
+          validate(
+            ctx.param,
+            validator.resourceId
+              ? {
+                  [name]: validator.resourceId.required(),
+                }
+              : null,
+          );
         } catch (e) {
           // remove joi error color
-          e.message = e.annotate(true);
           throw boom.wrap(e, 422);
         }
         await next();
@@ -66,4 +69,10 @@ function makeRouter(name, handle) {
   }
 
   return handle;
+}
+
+function validate(value, schema) {
+  if (!schema) return;
+  const { error, ret } = joi.validate(value, schema);
+  if (error) throw error;
 }

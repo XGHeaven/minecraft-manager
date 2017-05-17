@@ -9,13 +9,7 @@ class Entity {
     this._autoSaveKeys = Object.keys(store);
     this.store = store;
 
-    for (let key of this._autoSaveKeys) {
-      if (this[key] && _.isPlainObject(this[key])) {
-        _.merge(this[key], store[key]);
-      } else {
-        this[key] = store[key] || this[key];
-      }
-    }
+    _.merge(this, store);
   }
 
   save() {

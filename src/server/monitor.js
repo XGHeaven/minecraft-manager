@@ -44,9 +44,6 @@ class Monitor {
       this.errors.length = Math.min(this.errors.length, MAX_LOG_LINE);
     });
 
-    this.process.stderr.pipe(process.stderr);
-    this.process.stdout.pipe(process.stdout);
-
     const nLineStream = byline(this.process.stdout);
     nLineStream.on('data', data => this.console.write(data));
 

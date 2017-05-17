@@ -37,14 +37,15 @@ export default function() {
           name: joi.string().token().required(),
           version: joi.string().version().required(),
           save: joi.string().token().required(),
-          options: joi.object({
+          options: joi.object().keys({
             javaXms: joi.string(),
             javaXmx: joi.string(),
+            properties: joi.object().properties(),
           }),
         },
       },
       async function(ctx) {
-        const name = ctx.request.body.name, version = ctx.request.body.version, saveName = ctx.request.body.save;
+        const { name, version, save: saveName, options } = ctx.request.body;
         const jar = ctx.context.jarManager.get(version);
         const save = ctx.context.saveManager.get(saveName);
 
@@ -52,7 +53,7 @@ export default function() {
           throw boom.badData('not created jar or save');
         }
 
-        const server = ctx.context.serverManager.create(name, jar, save);
+        const server = ctx.context.serverManager.create(name, jar, save, options);
 
         ctx.body = server.toJSONObject();
       },
@@ -66,15 +67,16 @@ export default function() {
     update: [
       {
         body: {
-          status: joi.string().valid('start', 'stop').required(),
-          options: joi.object({
+          status: joi.string().valid('start', 'stop'),
+          options: joi.object().keys({
             javaXmx: joi.string(),
             javaXms: joi.string(),
+            properties: joi.object().properties(),
           }),
         },
       },
       async function(ctx) {
-        const status = ctx.request.body.status;
+        const { status, options } = ctx.request.body;
 
         switch (status) {
           case 'start':
@@ -85,7 +87,9 @@ export default function() {
             break;
         }
 
-        _.merge(ctx.server.options, ctx.request.body.options);
+        if (options) {
+          _.merge(ctx.server.option, options);
+        }
 
         ctx.body = ctx.server.toJSONObject();
       },

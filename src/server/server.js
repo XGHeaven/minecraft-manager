@@ -4,48 +4,54 @@ import _ from 'lodash';
 import Entity from '../lib/entity';
 import { event } from '../lib/event';
 import Mutex from '../lib/mutex';
+import assert from 'assert';
+import Save from '../save/save';
+import Jar from '../jar/jar';
 
 class Server extends Entity {
   process = null;
 
-  option = {
+  static defaultOption = {
     javaXms: '256M',
     javaXmx: '1G',
-  };
-
-  properties = {
-    gamemode: 0,
-    difficulty: 1,
-    pvp: true,
-    'enable-command-block': false,
-    'max-players': 20,
-    'server-port': 25565,
-    'server-ip': '',
-    'view-distance': 10,
-    'white-list': false,
-    'online-mode': false,
-    'level-seed': '',
-    motd: 'A Minecraft Server',
+    properties: {
+      gamemode: 0,
+      difficulty: 1,
+      pvp: true,
+      'enable-command-block': false,
+      'max-players': 20,
+      'server-port': 25565,
+      'view-distance': 10,
+      'white-list': false,
+      'online-mode': false,
+      'level-seed': 0,
+      motd: 'A Minecraft Server',
+    },
   };
 
   l = new Mutex(60 * 1000);
 
-  constructor(context, name, version, saveName, option, properties) {
+  constructor(context, name, version, saveName, option = {}) {
     if (_.isPlainObject(name)) {
       super(name);
     } else {
       super({
         name,
         version,
-        option,
         saveName,
-        properties,
+        option,
       });
     }
+
+    _.defaultsDeep(this.option, Server.defaultOption);
 
     this.context = context;
     this.save_ = context.saveManager.get(this.saveName); // conflict with save() function
     this.jar = context.jarManager.get(this.version);
+
+    assert.ok(this.save_ instanceof Save, 'save is undefined');
+    assert.ok(this.jar instanceof Jar, 'jar is undefined');
+
     this.monitor = null;
     this.logger = logger.child({
       server: this.name,
@@ -55,6 +61,8 @@ class Server extends Entity {
 
   async start() {
     await this.l.lock();
+    if (!this.jar.installed) await this.jar.install();
+    this.monitor.options = this.option;
     this.save_.link(this);
     this.logger.info('starting');
     const res = await this.monitor.start();
