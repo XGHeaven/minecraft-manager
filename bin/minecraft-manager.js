@@ -36,7 +36,6 @@ const argv = require('yargs')
 
 const MinecraftManager = require('../').default
 
-console.log(argv.dir)
 option.basePath = path.join(process.cwd(), argv.dir)
 
 if (path.isAbsolute(argv.dir)) {
