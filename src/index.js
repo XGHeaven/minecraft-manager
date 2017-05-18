@@ -1,3 +1,5 @@
+import 'babel-polyfill';
+
 import JarManager from './jar';
 import ServerManager from './server';
 import SaveManager from './save';

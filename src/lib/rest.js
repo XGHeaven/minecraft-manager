@@ -2,11 +2,12 @@ import Router from 'koa-router';
 import joi from './joi';
 import boom from 'boom';
 
-export default function rest(RouteBuilder) {
-  RouteBuilder = RouteBuilder.default || RouteBuilder;
+export default function rest(resource) {
+  resource = resource.default || resource;
+
+  typeof resource === 'function' && (resource = resource());
 
   const router = new Router();
-  const resource = new RouteBuilder();
   const name = resource.name;
   const _name = `/:${name}`;
 

@@ -1,67 +1,65 @@
 import joi from '../lib/joi';
 import boom from 'boom';
 
-export default function() {
-  return {
-    name: 'save',
+export default {
+  name: 'save',
 
-    checker: [
-      {
-        resourceId: joi.string().token(),
-      },
-      async (ctx, next) => {
-        const name = ctx.params.save, save = ctx.context.saveManager.get(name);
-
-        if (!save) throw boom.notFound('save not created');
-
-        ctx.save = save;
-        await next();
-      },
-    ],
-
-    index: async ctx => {
-      ctx.body = ctx.context.saveManager.toJSONObject();
+  checker: [
+    {
+      resourceId: joi.string().token(),
     },
+    async (ctx, next) => {
+      const name = ctx.params.save, save = ctx.context.saveManager.get(name);
 
-    create: [
-      {
-        body: {
-          name: joi.string().token().required(),
-        },
-      },
-      async ctx => {
-        const save = ctx.context.saveManager.create(ctx.request.body.name);
-        ctx.body = save.toJSONObject();
-      },
-    ],
+      if (!save) throw boom.notFound('save not created');
 
-    get: async ctx => {
-      ctx.body = ctx.save.toJSONObject();
+      ctx.save = save;
+      await next();
     },
+  ],
 
-    update: [
-      {
-        body: {
-          backup: joi.string().token(),
-        },
+  index: async ctx => {
+    ctx.body = ctx.context.saveManager.toJSONObject();
+  },
+
+  create: [
+    {
+      body: {
+        name: joi.string().token().required(),
       },
-      async ctx => {
-        if (ctx.request.body.backup && ctx.save.getBackup(ctx.request.body.backup)) {
-          ctx.save.useBackup(ctx.request.body.backup);
-        }
+    },
+    async ctx => {
+      const save = ctx.context.saveManager.create(ctx.request.body.name);
+      ctx.body = save.toJSONObject();
+    },
+  ],
 
-        ctx.body = ctx.save.toJSONObject();
+  get: async ctx => {
+    ctx.body = ctx.save.toJSONObject();
+  },
+
+  update: [
+    {
+      body: {
+        backup: joi.string().token(),
       },
-    ],
-
-    delete: async ctx => {
-      if (!ctx.save.remove()) {
-        throw boom.preconditionRequired('remove save after remove server');
+    },
+    async ctx => {
+      if (ctx.request.body.backup && ctx.save.getBackup(ctx.request.body.backup)) {
+        ctx.save.useBackup(ctx.request.body.backup);
       }
 
-      ctx.body = void 0;
+      ctx.body = ctx.save.toJSONObject();
     },
+  ],
 
-    children: [require('./backup')],
-  };
-}
+  delete: async ctx => {
+    if (!ctx.save.remove()) {
+      throw boom.preconditionRequired('remove save after remove server');
+    }
+
+    ctx.body = void 0;
+  },
+
+  children: [require('./backup')],
+};
