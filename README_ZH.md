@@ -19,7 +19,7 @@
 
 # Install 安装
 
-首先你需要安装 Node.js 环境，请前往 [Node.js](https://nodejs.org/en/download/current/)，版本建议 Node 6 以上
+首先你需要安装 Node.js 环境，请前往 [Node.js](https://nodejs.org/en/download/current/)，版本建议 Node 6.10 以上
 安装 Node.js 和 npm 之后，在终端中运行以下命令
 
 ```
