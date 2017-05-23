@@ -4,19 +4,6 @@ import decompress from 'decompress';
 
 const VERSIONREG = /^[\d]+\.[\d]+(\.[\d]+)?$/;
 
-export function isDirectory(path) {
-  return fs.lstatSync(path).isDirectory();
-}
-
-export function isFile(path) {
-  try {
-    fs.accessSync(path);
-    return fs.lstatSync(path).isFile();
-  } catch (err) {
-    return false;
-  }
-}
-
 export function cp(from, to) {
   return new Promise((resolve, reject) => {
     fs.readFile(from, (err, data) => {

@@ -9,7 +9,7 @@ class Manager {
     this.db = context.db;
   }
 
-  save(): Manager {
+  save() {
     this.forEach(entity => entity.save());
     return this;
   }
