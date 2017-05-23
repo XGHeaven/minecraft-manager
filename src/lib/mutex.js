@@ -16,14 +16,16 @@ export default class Mutex {
     });
 
     this.promises.push(promise);
-    await Promise.all(_.dropRight(this.promises, 1));
+    await pre;
 
-    setTimeout(
+    const timer = setTimeout(
       () => {
         logger.warn('Mutex Timeout');
+        process.emit('mutex', 'timeout');
       },
       timeout || this.timeout,
     );
+    promise.then(() => clearTimeout(timer)).catch(() => clearTimeout(timer));
   }
 
   async unlock() {
