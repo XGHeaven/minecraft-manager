@@ -4,6 +4,7 @@ import RouterBuilder from './router';
 import * as boom from 'boom';
 import { apiLogger as logger } from '../lib/logger';
 import cors from 'kcors';
+import { PortCannotListenError } from '../lib/errors';
 
 export default function(mm) {
   const app = new Koa();
@@ -27,7 +28,14 @@ export default function(mm) {
     try {
       await next();
     } catch (err) {
-      if (!err.isBoom) err = boom.wrap(err);
+      switch (true) {
+        case err instanceof PortCannotListenError:
+          err = boom.preconditionFailed(err);
+          break;
+        default:
+          err = boom.wrap(err);
+      }
+
       ctx.status = err.output.statusCode;
       ctx.body = err.output.payload;
       logger.error(err);

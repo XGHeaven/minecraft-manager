@@ -2,6 +2,7 @@ import boom from 'boom';
 import joi from '../lib/joi';
 import _ from 'lodash';
 import { events } from '../lib/event';
+import { PortCannotListenError } from '../lib/errors';
 
 export default {
   name: 'server',
@@ -77,17 +78,17 @@ export default {
     async function(ctx) {
       const { status, options } = ctx.request.body;
 
+      if (options) {
+        _.merge(ctx.server.option, options);
+      }
+
       switch (status) {
         case 'start':
-          ctx.server.start();
+          ctx.server.startDeattach();
           break;
         case 'stop':
           ctx.server.stop();
           break;
-      }
-
-      if (options) {
-        _.merge(ctx.server.option, options);
       }
 
       ctx.body = ctx.server.toJSONObject();

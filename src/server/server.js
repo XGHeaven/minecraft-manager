@@ -7,6 +7,7 @@ import Mutex from '../lib/mutex';
 import assert from 'assert';
 import Save from '../save/save';
 import Jar from '../jar/jar';
+import { PortCannotListenError } from '../lib/errors';
 
 class Server extends Entity {
   process = null;
@@ -60,7 +61,21 @@ class Server extends Entity {
     this.monitor = new Monitor(this.jar, this.save_, this.option);
   }
 
+  startDeattach() {
+    if (!this.getManager().canStart(this)) {
+      event('server-start', {
+        result: false,
+        server: this.name,
+      });
+      throw new PortCannotListenError();
+    }
+    this.start();
+  }
+
   async start() {
+    if (!this.getManager().canStart(this)) {
+      throw new PortCannotListenError();
+    }
     this.status = 'installing';
     await this.l.lock();
     if (!this.jar.installed) {
@@ -118,8 +133,15 @@ class Server extends Entity {
       saveName: this.save_.name,
       status: this.status,
       options: this.option,
-      properties: this.properties,
     };
+  }
+
+  getProperties(name) {
+    return this.option.properties[name];
+  }
+
+  getManager() {
+    return this.context.serverManager;
   }
 }
 

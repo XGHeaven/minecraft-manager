@@ -17,6 +17,10 @@ class Entity {
       this.store[key] = this[key];
     }
   }
+
+  getManager() {
+    return null;
+  }
 }
 
 export default Entity;

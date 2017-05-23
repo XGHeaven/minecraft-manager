@@ -52,6 +52,16 @@ class ServerManager extends Manager {
     }
     return false;
   }
+
+  canStart(server) {
+    for (let [, sve] of this.data) {
+      if (sve.status !== 'stopped' && sve.getProperties('server-port') === server.getProperties('server-port')) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 }
 
 export default ServerManager;
