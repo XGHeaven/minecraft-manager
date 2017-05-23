@@ -1,7 +1,12 @@
 import os from 'os';
 import _ from 'lodash';
+import { Event } from './event';
+import Rx from 'rxjs';
+
+const debug = require('debug')('MM:lib:os-usage');
 
 let cpuHistory = cpuUsage();
+let usageHistory = currentUsage();
 
 function cpuUsage() {
   const cpus = os.cpus();
@@ -29,8 +34,7 @@ function currentCpuUsage() {
   return temp;
 }
 
-export default function() {
-  const cpus = os.cpus();
+function currentUsage() {
   return {
     cpu: currentCpuUsage(),
     mem: {
@@ -41,3 +45,24 @@ export default function() {
     loadavg: os.loadavg(),
   };
 }
+
+export function usage() {
+  return currentUsage();
+}
+
+export const observer = Rx.Observable
+  .create(observer => {
+    observer.next(currentUsage());
+    const timer = setInterval(
+      () => {
+        observer.next(currentUsage());
+      },
+      1000,
+    );
+
+    return clearInterval.bind(global, timer);
+  })
+  .multicast(new Rx.Subject())
+  .refCount();
+
+export const event = observer.map(v => new Event('message', v));

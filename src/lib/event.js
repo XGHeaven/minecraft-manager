@@ -1,15 +1,7 @@
-import { Duplex, PassThrough } from 'stream';
+import { Duplex, PassThrough, Transform } from 'stream';
+import Rx from 'rxjs';
 
-export const bus = new Duplex({
-  writableObjectMode: true,
-});
-
-bus._read = function(n) {};
-
-bus._write = function(data, ec, cb) {
-  this.push(data.toString() + '\n\n');
-  cb();
-};
+const debug = require('debug')('MM:lib:event');
 
 export class Event {
   constructor(event, data) {
@@ -22,8 +14,22 @@ export class Event {
   }
 }
 
+export class EventStream extends Transform {
+  constructor(options = {}) {
+    Object.assign(options, { objectMode: true });
+    super(options);
+  }
+
+  _transform(chunk /*Event*/, encode, callback) {
+    this.push(chunk.toString() + '\n\n');
+    callback();
+  }
+}
+
+export const bus = new Rx.Subject();
+
 export function event(event, data = null) {
-  bus.write(new Event(event, data));
+  bus.next(new Event(event, data));
 }
 
 export function events(lastTime = 60 * 1000, from = bus) {
@@ -35,6 +41,7 @@ export function events(lastTime = 60 * 1000, from = bus) {
     () => {
       from.unpipe(sub);
       sub.end();
+      debug('unpipe after', lastTime);
     },
     lastTime,
   );

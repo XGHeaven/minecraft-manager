@@ -45,6 +45,7 @@
     "request": "^2.81.0",
     "request-promise-native": "^1.0.3",
     "rimraf": "^2.6.1",
+    "rxjs": "^5.4.0",
     "yargs": "^7.0.2",
     "yn": "^1.2.0"
   },
