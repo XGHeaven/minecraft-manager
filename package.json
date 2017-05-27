@@ -10,7 +10,8 @@
     "start": "babel-node ./bin/minecraft-manager-dev.js",
     "test": "jest",
     "precommit": "lint-staged",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "build-api": "babel-node build/build-api.js"
   },
   "repository": {
     "type": "git",
@@ -45,6 +46,7 @@
     "request": "^2.81.0",
     "request-promise-native": "^1.0.3",
     "rimraf": "^2.6.1",
+    "rx-node": "^1.0.2",
     "rxjs": "^5.4.0",
     "yargs": "^7.0.2",
     "yn": "^1.2.0"
@@ -62,6 +64,7 @@
     "delay": "^2.0.0",
     "husky": "^0.13.3",
     "jest": "^19.0.2",
+    "joi-to-json-schema": "^3.0.0",
     "lint-staged": "^3.4.0",
     "prettier": "^0.22.0"
   },

@@ -6,11 +6,9 @@ const debug = require('debug')('MM:api:backup');
 export default {
   name: 'backup',
 
-  checker: [
-    {
-      resourceId: joi.string().token(),
-    },
-    async (ctx, next) => {
+  checker: {
+    resourceId: joi.string().token(),
+    handle: async (ctx, next) => {
       const backupId = ctx.params.backup;
       const backup = ctx.save.getBackup(backupId);
 
@@ -21,7 +19,7 @@ export default {
       ctx.backup = backup;
       await next();
     },
-  ],
+  },
 
   index: async ctx => {
     ctx.body = ctx.save.backups;

@@ -4,11 +4,14 @@ import joi from '../lib/joi';
 export default {
   name: 'jar',
 
-  checker: [
-    {
-      resourceId: joi.string().version(),
-    },
-    async (ctx, next) => {
+  schema: {
+    version: joi.string().version(),
+    status: joi.string().valid('installing', 'installed', 'uninstall'),
+  },
+
+  checker: {
+    resourceId: joi.string().version(),
+    handle: async (ctx, next) => {
       const version = ctx.params.jar;
       const jar = ctx.context.jarManager.get(version);
       if (!jar) {
@@ -17,19 +20,17 @@ export default {
       ctx.jar = jar;
       await next();
     },
-  ],
+  },
 
   index: async function(ctx) {
     ctx.body = ctx.context.jarManager.toJSONObject();
   },
 
-  create: [
-    {
-      body: {
-        version: joi.string().version().required(),
-      },
+  create: {
+    body: {
+      version: joi.string().version().required(),
     },
-    async ctx => {
+    handle: async ctx => {
       const version = ctx.request.body.version;
 
       if (!ctx.context.jarManager.isVersion(version)) {
@@ -39,15 +40,13 @@ export default {
       ctx.status = ctx.context.jarManager.get(version) ? 200 : 201;
       ctx.body = ctx.context.jarManager.create(version).toJSONObject();
     },
-  ],
+  },
 
-  update: [
-    {
-      body: {
-        status: joi.string().valid('install', 'uninstall', 'reinstall').required(),
-      },
+  update: {
+    body: {
+      status: joi.string().valid('install', 'uninstall', 'reinstall').required(),
     },
-    async ctx => {
+    handle: async ctx => {
       const status = ctx.request.body.status;
       const jar = ctx.jar;
 
@@ -68,7 +67,7 @@ export default {
 
       ctx.body = jar.toJSONObject();
     },
-  ],
+  },
 
   get: async ctx => {
     ctx.body = ctx.jar.toJSONObject();

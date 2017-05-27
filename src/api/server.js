@@ -2,15 +2,25 @@ import boom from 'boom';
 import joi from '../lib/joi';
 import _ from 'lodash';
 import { events } from '../lib/event';
-import { PortCannotListenError } from '../lib/errors';
+import { ServerNotStartError } from '../lib/errors';
 
 export default {
   name: 'server',
-  checker: [
-    {
-      resourceId: joi.string().token().required(),
-    },
-    async function(ctx, next) {
+
+  schema: {
+    name: joi.string().token(),
+    version: joi.string().version(),
+    saveName: joi.string().token(),
+    options: joi.object().keys({
+      javaXms: joi.string(),
+      javaXmx: joi.string(),
+      properties: joi.object().properties(),
+    }),
+  },
+
+  checker: {
+    resourceId: joi.string().token().required(),
+    handle: async function(ctx, next) {
       const name = ctx.params.server;
       const server = ctx.context.serverManager.get(name);
       if (server === null) {
@@ -19,7 +29,7 @@ export default {
       ctx.server = server;
       await next();
     },
-  ],
+  },
 
   index: async function(ctx) {
     const servers = [];
@@ -31,20 +41,18 @@ export default {
     ctx.body = servers;
   },
 
-  create: [
-    {
-      body: {
-        name: joi.string().token().required(),
-        version: joi.string().version().required(),
-        save: joi.string().token().required(),
-        options: joi.object().keys({
-          javaXms: joi.string(),
-          javaXmx: joi.string(),
-          properties: joi.object().properties(),
-        }),
-      },
+  create: {
+    body: {
+      name: joi.string().token().required(),
+      version: joi.string().version().required(),
+      save: joi.string().token().required(),
+      options: joi.object().keys({
+        javaXms: joi.string(),
+        javaXmx: joi.string(),
+        properties: joi.object().properties(),
+      }),
     },
-    async function(ctx) {
+    handle: async function(ctx) {
       const { name, version, save: saveName, options } = ctx.request.body;
       const jar = ctx.context.jarManager.get(version);
       const save = ctx.context.saveManager.get(saveName);
@@ -57,25 +65,23 @@ export default {
 
       ctx.body = server.toJSONObject();
     },
-  ],
+  },
 
   get: async function(ctx) {
     const server = ctx.server;
     ctx.body = server.toJSONObject();
   },
 
-  update: [
-    {
-      body: {
-        status: joi.string().valid('start', 'stop'),
-        options: joi.object().keys({
-          javaXmx: joi.string(),
-          javaXms: joi.string(),
-          properties: joi.object().properties(),
-        }),
-      },
+  update: {
+    body: {
+      status: joi.string().valid('start', 'stop'),
+      options: joi.object().keys({
+        javaXmx: joi.string(),
+        javaXms: joi.string(),
+        properties: joi.object().properties(),
+      }),
     },
-    async function(ctx) {
+    handle: async function(ctx) {
       const { status, options } = ctx.request.body;
 
       if (options) {
@@ -93,7 +99,7 @@ export default {
 
       ctx.body = ctx.server.toJSONObject();
     },
-  ],
+  },
 
   delete: async ctx => {
     if (!ctx.server.remove()) {
@@ -107,23 +113,36 @@ export default {
     {
       name: 'console',
 
-      index: async ctx => {
-        ctx.body = ctx.server.monitor.lines;
+      schema: {
+        log: joi.string().description('the whole log'),
+        time: joi.string().regex(/^\d\d:\d\d:\d\d$/).description('log generator time'),
+        type: joi.string().description('log type, only from server'),
+        from: joi.string().valid('client', 'server').description('where log generator from'),
+        message: joi.string().description('log message, only from server'),
+        name: joi.string().description('log generator thread, only from server'),
       },
-      create: [
-        {
-          body: {
-            command: joi.string().required(),
-          },
+
+      index: {
+        query: {
+          format: joi.string().valid('event'),
         },
-        async ctx => {
-          await ctx.server.monitor.send(ctx.request.body.command);
-          ctx.body = void 0;
+        handle: async ctx => {
+          if (ctx.query.format === 'event') {
+            ctx.type = 'text/event-stream';
+            ctx.body = events(60 * 1000, ctx.server.monitor.console.eventStream);
+          } else
+            ctx.body = ctx.server.monitor.lines;
         },
-      ],
-      get: async ctx => {
-        ctx.type = 'text/event-stream';
-        ctx.body = events(60 * 1000, ctx.server.monitor.console.eventStream);
+      },
+      create: {
+        body: {
+          command: joi.string().required(),
+        },
+        throw: [ServerNotStartError],
+        handle: async ctx => {
+          if (ctx.server.status !== 'started') throw new ServerNotStartError();
+          ctx.body = await ctx.server.monitor.send(ctx.request.body.command);
+        },
       },
     },
 

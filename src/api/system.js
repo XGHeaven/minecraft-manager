@@ -2,36 +2,29 @@ import { usage, event } from '../lib/os-usage';
 import { EventStream } from '../lib/event';
 import joi from '../lib/joi';
 
+const info = {
+  version: require('../../package.json').version,
+  node: process.versions.node,
+};
+
 export default {
   name: 'system',
-  checker: [
-    {
-      resourceId: joi.string().valid('usage', 'stream', 'info'),
-    },
-    async (ctx, next) => {
+  checker: {
+    resourceId: joi.string().valid('usage', 'info').description('system resource type'),
+    handle: async (ctx, next) => {
       const type = ctx.params.system;
       await next();
     },
-  ],
-  index: async ctx => {
-    ctx.body = {
-      usage: usage(),
-      info: currentInfo(),
-    };
   },
-  get: async ctx => {
-    switch (ctx.params.system) {
-      case 'usage':
-        ctx.body = usage();
-        break;
-      case 'info':
-        ctx.body = currentInfo();
-        break;
-      case 'stream':
+  index: {
+    query: {
+      format: joi.string().valid('event'),
+    },
+    handle: async ctx => {
+      if (ctx.params.format === 'event') {
         ctx.type = 'text/event-stream';
         const eventStream = new EventStream();
-        // const sub = RxNode.writeToStream(event, eventStream)
-        const sub = event.subscribe(::eventStream.write, null, ::eventStream.end);
+        const sub = event.map(v => ({ usage: v, info })).subscribe(::eventStream.write, null, ::eventStream.end);
         ctx.body = eventStream;
         setTimeout(
           () => {
@@ -40,13 +33,24 @@ export default {
           },
           60 * 1000,
         );
-    }
+        return;
+      }
+      ctx.body = {
+        usage: usage(),
+        info,
+      };
+    },
+  },
+  get: {
+    handle: async ctx => {
+      switch (ctx.params.system) {
+        case 'usage':
+          ctx.body = usage();
+          break;
+        case 'info':
+          ctx.body = info;
+          break;
+      }
+    },
   },
 };
-
-function currentInfo() {
-  return {
-    version: require('../../package.json').version,
-    node: process.versions.node,
-  };
-}

@@ -1,9 +1,9 @@
 import baseJoi from 'joi';
 
 const extensions = [];
-const versionReg = /^\d+\.\d+(\.\d+)?$|^\d+w\d+[a-z]$/;
+const versionReg = /^\d+\.\d+(\.\d+)?(-pre\d*)?$|^\d+w\d+[a-z]$/;
 
-const propertiesSchema = baseJoi.object().keys({
+const propertiesSchema = {
   gamemode: baseJoi.number().valid(0, 1, 2, 3),
   difficulty: baseJoi.number().valid(0, 1, 2, 3),
   pvp: baseJoi.boolean(),
@@ -15,46 +15,38 @@ const propertiesSchema = baseJoi.object().keys({
   'online-mode': baseJoi.boolean(),
   'level-seed': baseJoi.number(),
   motd: baseJoi.string(),
+};
+
+extensions.push({
+  base: baseJoi.string(),
+  name: 'string',
+  language: {
+    version: 'format error',
+  },
+  rules: [
+    {
+      name: 'version',
+      setup(param) {
+        this._description = 'jar file version';
+        this._examples.push('1.11.2', '17w05a', '1.12-pre5');
+      },
+      validate(params, value, state, options) {
+        if (!versionReg.test(value)) {
+          return this.createError('string.version', { v: value }, state, options);
+        }
+
+        return value;
+      },
+    },
+  ],
 });
 
-extensions.push(
-  {
-    base: baseJoi.string(),
-    name: 'string',
-    language: {
-      version: 'format error',
-    },
-    rules: [
-      {
-        name: 'version',
-        validate(params, value, state, options) {
-          if (!versionReg.test(value)) {
-            return this.createError('string.version', { v: value }, state, options);
-          }
+const newJoi = baseJoi.extend(extensions);
+export default newJoi;
 
-          return value;
-        },
-      },
-    ],
-  },
-  {
-    base: baseJoi.object(),
-    name: 'object',
-    language: {
-      properties: 'with wrong value',
-    },
-    rules: [
-      {
-        name: 'properties',
-        validate(params, value, state, options) {
-          const ret = propertiesSchema.validate(value);
-          console.log(ret);
-          if (ret.error) return this.createError('object.properties', null, state, options);
-          return ret.value;
-        },
-      },
-    ],
-  },
-);
-
-export default baseJoi.extend(extensions);
+newJoi.object().constructor.prototype['properties'] = function() {
+  if (this._flags.mcProperties) return this.clone();
+  const obj = this.keys(propertiesSchema);
+  obj._flags.mcProperties = true;
+  return obj;
+};

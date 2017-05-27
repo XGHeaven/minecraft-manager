@@ -1,6 +1,7 @@
 import Router from 'koa-router';
 import joi from './joi';
 import boom from 'boom';
+import assert from 'assert';
 
 export default function rest(resource) {
   resource = resource.default || resource;
@@ -42,32 +43,33 @@ function makeRouter(name, handle) {
     return [handle];
   }
 
+  assert.ok(typeof handle.handle === 'function');
+
   // with validator
-  if (typeof handle[0] === 'object') {
-    let validator = handle.shift();
-    return [
-      async (ctx, next) => {
-        try {
-          validate(ctx.request.body, validator.body);
-          validate(ctx.headers, validator.header);
-          validate(ctx.query, validator.query);
-          validate(
-            ctx.param,
-            validator.resourceId
-              ? {
-                  [name]: validator.resourceId.required(),
-                }
-              : null,
-          );
-        } catch (e) {
-          // remove joi error color
-          throw boom.wrap(e, 422);
-        }
-        await next();
-      },
-      ...handle,
-    ];
-  }
+  let validator = handle;
+  handle = handle.handle;
+  return [
+    async (ctx, next) => {
+      try {
+        validate(ctx.request.body, validator.body);
+        validate(ctx.headers, validator.header);
+        validate(ctx.query, validator.query);
+        validate(
+          ctx.param,
+          validator.resourceId
+            ? {
+                [name]: validator.resourceId.required(),
+              }
+            : null,
+        );
+      } catch (e) {
+        // remove joi error color
+        throw boom.wrap(e, 422);
+      }
+      await next();
+    },
+    handle,
+  ];
 
   return handle;
 }
