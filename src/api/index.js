@@ -27,7 +27,7 @@ export default function(mm) {
     try {
       await next();
     } catch (err) {
-      err = boom.wrap(err, err.code);
+      err = boom.wrap(err, err.code || 500);
       ctx.status = err.output.statusCode;
       ctx.body = err.output.payload;
       logger.error(err);
