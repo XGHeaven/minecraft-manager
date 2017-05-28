@@ -52,6 +52,10 @@ minecraft-manager --api 8080
 目前只支持单用户验证。
 如果在生产环境中，建议添加验证。
 
+# RESTful
+
+请参考[文档](http://swaggerui.herokuapp.com/?url=https://raw.githubusercontent.com/XGHeaven/minecraft-manager/master/docs/swagger.json)
+
 # Progress
 
 Please to [issue](https://github.com/XGHeaven/minecraft-manager/issues?q=is%3Aopen+is%3Aissue+label%3Aprogress)
