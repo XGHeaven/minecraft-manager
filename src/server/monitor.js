@@ -93,10 +93,34 @@ class Monitor {
   }
 
   async send(...args) {
-    if (this.process) {
-      this.process.stdin.write(args.join(' ') + '\n');
-      this.console.send(args.join(' '));
-    }
+    if (!this.process) return null;
+    this.process.stdin.write(args.join(' ') + '\n');
+    this.console.send(args.join(' '));
+  }
+
+  async listCommand() {
+    if (!this.process) return null;
+    await this.send('list');
+    const result = [];
+    await new Promise((res, rej) => {
+      const checker = log => {
+        let matchs;
+        if ((matchs = log.message.match(/There are (\d+)\/\d+ players online/))) {
+          res(matchs[1]);
+          this.console.removeListener('data', checker);
+        }
+      };
+      this.console.on('data', checker);
+    }).then(time => {
+      const collection = log => {
+        if (/^\w+$/.test(log.message)) {
+          result.push(log.message);
+          if (!--time) this.console.removeListener('data', collection);
+        }
+      };
+      this.console.on('data', collection);
+    });
+    return result;
   }
 }
 

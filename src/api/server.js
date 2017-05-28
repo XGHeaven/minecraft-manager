@@ -153,5 +153,16 @@ export default {
         ctx.body = ctx.server.monitor.errors;
       },
     },
+
+    {
+      name: 'player',
+      index: {
+        summary: 'read player data from nbt, not realtime',
+        description: 'read player data from playerdata.dat and ops.json, you cannot modify some value',
+        handle: async ctx => {
+          ctx.body = await ctx.server.player.find();
+        },
+      },
+    },
   ],
 };

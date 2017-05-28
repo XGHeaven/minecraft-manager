@@ -8,6 +8,7 @@ import assert from 'assert';
 import Save from '../save/save';
 import Jar from '../jar/jar';
 import { PortCannotListenError } from '../lib/errors';
+import Player from './player';
 
 class Server extends Entity {
   process = null;
@@ -59,6 +60,7 @@ class Server extends Entity {
       server: this.name,
     });
     this.monitor = new Monitor(this.jar, this.save_, this.option);
+    this.player = new Player(this);
   }
 
   startDeattach() {

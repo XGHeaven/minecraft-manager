@@ -8,6 +8,8 @@ import _ from 'lodash';
 import Entity from '../lib/entity';
 import { event } from '../lib/event';
 import Mutex from '../lib/mutex';
+import readdir from 'readdir';
+import nbt from 'prismarine-nbt';
 
 const debug = require('debug')('MM:Save');
 
@@ -76,6 +78,9 @@ class Save extends Entity {
     this.path = path.join(context.savePath, this.name);
     this.latestPath = path.join(this.path, 'latest');
     this.backupPath = path.join(this.path, 'backup');
+    this.opFilePath = path.join(this.latestPath, 'ops.json');
+    this.playerFolder = path.join(this.latestPath, 'world', 'playerdata');
+    this.userCachePath = path.join(this.latestPath, 'usercache.json');
     this._backupPromise = null;
     this.autoBackup = {
       maxKeep: 10,
@@ -255,6 +260,49 @@ class Save extends Entity {
 
   isUsing() {
     return !!this.server;
+  }
+
+  async getOps() {
+    try {
+      return JSON.parse(await utils.callAsPromise(fs, 'readFile', this.opFilePath, 'utf-8'));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async getPlayer(uuid) {
+    if (uuid) {
+      const playerPath = path.join(this.playerFolder, `${uuid}.dat`);
+      if (is.file(playerPath)) {
+        return {
+          uuid: uuid,
+          nbt: await utils.callAsPromise(
+            nbt,
+            'parse',
+            await utils.callAsPromise(fs, 'readFile', path.join(this.playerFolder, playerPath)),
+          ),
+        };
+      }
+      return null;
+    }
+
+    const playerFilePathList = await utils.callAsPromise(readdir, 'read', this.playerFolder);
+    const playerList = [];
+    for (let playerFilePath of playerFilePathList) {
+      playerList.push({
+        uuid: path.parse(playerFilePath).name,
+        nbt: await utils.callAsPromise(
+          nbt,
+          'parse',
+          await utils.callAsPromise(fs, 'readFile', path.join(this.playerFolder, playerFilePath)),
+        ),
+      });
+    }
+    return playerList;
+  }
+
+  async getUserCache() {
+    return (await JSON.parse(await utils.callAsPromise(fs, 'readFile', this.userCachePath, 'utf-8'))) || [];
   }
 }
 
