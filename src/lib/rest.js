@@ -3,6 +3,10 @@ import joi from './joi';
 import boom from 'boom';
 import assert from 'assert';
 
+const joiOption = {
+  allowUnknown: true,
+};
+
 export default function rest(resource) {
   resource = resource.default || resource;
 
@@ -76,6 +80,6 @@ function makeRouter(name, handle) {
 
 function validate(value, schema) {
   if (!schema) return;
-  const { error, ret } = joi.validate(value, schema);
+  const { error, ret } = joi.validate(value, schema, joiOption);
   if (error) throw error;
 }

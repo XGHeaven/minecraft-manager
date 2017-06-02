@@ -1,6 +1,6 @@
 {
   "name": "minecraft-manager",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "a minecraft server manager with web gui just for vanilla minecraft server",
   "main": "dist/index.js",
   "bin": "./bin/minecraft-manager.js",
