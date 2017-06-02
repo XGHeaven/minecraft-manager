@@ -101,8 +101,7 @@ class Monitor {
   async listCommand() {
     if (!this.process) return null;
     await this.send('list');
-    const result = [];
-    await new Promise((res, rej) => {
+    let time = await new Promise((res, rej) => {
       const checker = log => {
         let matchs;
         if ((matchs = log.message.match(/There are (\d+)\/\d+ players online/))) {
@@ -111,16 +110,21 @@ class Monitor {
         }
       };
       this.console.on('data', checker);
-    }).then(time => {
+    });
+
+    return await new Promise(res => {
+      const result = [];
       const collection = log => {
         if (/^\w+$/.test(log.message)) {
           result.push(log.message);
-          if (!--time) this.console.removeListener('data', collection);
+          if (!--time) {
+            this.console.removeListener('data', collection);
+            res(result);
+          }
         }
       };
       this.console.on('data', collection);
     });
-    return result;
   }
 }
 

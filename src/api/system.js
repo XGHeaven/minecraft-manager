@@ -1,5 +1,5 @@
 import { usage, event } from '../lib/os-usage';
-import { EventStream } from '../lib/event';
+import { EventStream, Event } from '../lib/event';
 import joi from '../lib/joi';
 
 const info = {
@@ -21,10 +21,12 @@ export default {
       format: joi.string().valid('event'),
     },
     handle: async ctx => {
-      if (ctx.params.format === 'event') {
+      if (ctx.query.format === 'event') {
         ctx.type = 'text/event-stream';
         const eventStream = new EventStream();
-        const sub = event.map(v => ({ usage: v, info })).subscribe(::eventStream.write, null, ::eventStream.end);
+        const sub = event
+          .map(e => ((e.data = { usage: e.data, info }), e))
+          .subscribe(::eventStream.write, null, ::eventStream.end);
         ctx.body = eventStream;
         setTimeout(
           () => {
