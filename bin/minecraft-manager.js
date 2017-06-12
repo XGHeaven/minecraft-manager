@@ -6,8 +6,7 @@ const path = require('path')
 const debug = require('debug')('MM:bin')
 const logger = require('../dist/lib/logger').Logger
 
-const option = {
-}
+const option = {}
 
 const argv = require('yargs')
   .usage('Usage $0 [option]')
@@ -20,7 +19,7 @@ const argv = require('yargs')
     alias: 'd',
     desc: 'where base directory',
     demandOption: true,
-    type:' string',
+    type: ' string',
   })
   .option('api', {
     alias: 'I',
@@ -30,9 +29,8 @@ const argv = require('yargs')
   })
   .option('auth', {
     desc: 'username for api auth, name:pwd',
-    type: 'string'
-  })
-  .argv
+    type: 'string',
+  }).argv
 
 const MinecraftManager = require('../').default
 
@@ -49,7 +47,7 @@ if (argv.auth) {
   let auth = argv.auth.split(':')
   option.auth = {
     name: auth[0],
-    pwd: auth[1]
+    pwd: auth[1],
   }
 }
 

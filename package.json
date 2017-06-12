@@ -68,7 +68,7 @@
     "jest": "^19.0.2",
     "joi-to-json-schema": "^3.0.0",
     "lint-staged": "^3.4.0",
-    "prettier": "^0.22.0"
+    "prettier": "^1.4.4"
   },
   "babel": {
     "presets": [
@@ -101,8 +101,8 @@
     "bin"
   ],
   "lint-staged": {
-    "src/**/*.js": [
-      "prettier --single-quote --trailing-comma all --print-width 120 --write",
+    "*.js": [
+      "prettier --single-quote --trailing-comma all --print-width 120 --write --no-semi",
       "git add"
     ]
   }

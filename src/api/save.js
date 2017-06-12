@@ -1,5 +1,5 @@
-import joi from '../lib/joi';
-import boom from 'boom';
+import joi from '../lib/joi'
+import boom from 'boom'
 
 export default {
   name: 'save',
@@ -12,17 +12,18 @@ export default {
     resourceId: joi.string().token(),
 
     handle: async (ctx, next) => {
-      const name = ctx.params.save, save = ctx.context.saveManager.get(name);
+      const name = ctx.params.save,
+        save = ctx.context.saveManager.get(name)
 
-      if (!save) throw boom.notFound('save not created');
+      if (!save) throw boom.notFound('save not created')
 
-      ctx.save = save;
-      await next();
+      ctx.save = save
+      await next()
     },
   },
 
   index: async ctx => {
-    ctx.body = ctx.context.saveManager.toJSONObject();
+    ctx.body = ctx.context.saveManager.toJSONObject()
   },
 
   create: {
@@ -30,13 +31,13 @@ export default {
       name: joi.string().token().required(),
     },
     handle: async ctx => {
-      const save = ctx.context.saveManager.create(ctx.request.body.name);
-      ctx.body = save.toJSONObject();
+      const save = ctx.context.saveManager.create(ctx.request.body.name)
+      ctx.body = save.toJSONObject()
     },
   },
 
   get: async ctx => {
-    ctx.body = ctx.save.toJSONObject();
+    ctx.body = ctx.save.toJSONObject()
   },
 
   update: {
@@ -45,20 +46,20 @@ export default {
     },
     handle: async ctx => {
       if (ctx.request.body.backup && ctx.save.getBackup(ctx.request.body.backup)) {
-        ctx.save.useBackup(ctx.request.body.backup);
+        ctx.save.useBackup(ctx.request.body.backup)
       }
 
-      ctx.body = ctx.save.toJSONObject();
+      ctx.body = ctx.save.toJSONObject()
     },
   },
 
   delete: async ctx => {
     if (!ctx.save.remove()) {
-      throw boom.preconditionRequired('remove save after remove server');
+      throw boom.preconditionRequired('remove save after remove server')
     }
 
-    ctx.body = void 0;
+    ctx.body = void 0
   },
 
   children: [require('./backup')],
-};
+}

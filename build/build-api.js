@@ -24,12 +24,14 @@ const swagger = {
   consumes: ['application/json', 'application/x-www-form-urlencoded', 'multipart/form-data'],
   securityDefinitions: {
     basicAuth: {
-      type: 'basic'
-    }
+      type: 'basic',
+    },
   },
-  security: [{
-    basicAuth: []
-  }],
+  security: [
+    {
+      basicAuth: [],
+    },
+  ],
   definitions: {},
 }
 
@@ -41,7 +43,7 @@ swagger.paths = Object.assign(
   parseRouter(require('../src/api/version')),
 )
 
-function parseRouter (router, parent = {path: '', parameter: undefined}) {
+function parseRouter(router, parent = { path: '', parameter: undefined }) {
   router = router.default || router
   if (typeof router === 'function') {
     router = router()
@@ -49,10 +51,8 @@ function parseRouter (router, parent = {path: '', parameter: undefined}) {
 
   const name = router.name
   const result = {
-    [`${parent.path}/${name}`]: {
-    },
-    [`${parent.path}/${name}/{${name}}`]: {
-    },
+    [`${parent.path}/${name}`]: {},
+    [`${parent.path}/${name}/{${name}}`]: {},
   }
   const resSchema = router.schema && joi2schema(joi.object().keys(router.schema))
 
@@ -63,13 +63,13 @@ function parseRouter (router, parent = {path: '', parameter: undefined}) {
     in: 'path',
     type: 'string',
     require: true,
-    description: (router.checker && router.checker.resourceId && router.checker.resourceId._description) || `${name} id`,
+    description:
+      (router.checker && router.checker.resourceId && router.checker.resourceId._description) || `${name} id`,
   }
 
   if (router.checker && router.checker.resourceId) {
     Object.assign(baseParameter, joi2schema(router.checker.resourceId.required()))
   }
-
 
   for (let type of ['index', 'create', 'get', 'update', 'delete']) {
     if (!router[type]) continue
@@ -78,7 +78,7 @@ function parseRouter (router, parent = {path: '', parameter: undefined}) {
     result[getPath(type, name)][operatorMap[type]] = resource
     resource.summary = route.summary || `${type} resource for ${name}`
     resource.description = route.description || ''
-    resource.responses['200'] = {description: 'Success'}
+    resource.responses['200'] = { description: 'Success' }
     resource.tags = [name]
 
     if (route.body) {
@@ -87,26 +87,32 @@ function parseRouter (router, parent = {path: '', parameter: undefined}) {
         in: 'body',
         name: 'body',
         description: body._description || 'body parameters',
-        schema: joi2schema(body)
+        schema: joi2schema(body),
       })
     }
 
     for (let para of ['query', 'header']) {
       if (!route[para]) continue
       for (let [key, value] of Object.entries(route[para])) {
-        resource.parameters.push(Object.assign({
-          in: para,
-          name: key,
-          description: value._description || `${para} parameter`,
-        }, joi2schema(value)))
+        resource.parameters.push(
+          Object.assign(
+            {
+              in: para,
+              name: key,
+              description: value._description || `${para} parameter`,
+            },
+            joi2schema(value),
+          ),
+        )
       }
     }
 
     if (['create', 'update'].includes(type)) {
-      !!  resSchema && (resource.responses[200].schema = {
-        type: 'array',
-        schema: `#/definitions/${name}`
-      })
+      !!resSchema &&
+        (resource.responses[200].schema = {
+          type: 'array',
+          schema: `#/definitions/${name}`,
+        })
     }
 
     if (['get', 'update', 'delete'].includes(type)) {
@@ -115,38 +121,37 @@ function parseRouter (router, parent = {path: '', parameter: undefined}) {
     }
 
     if (['get', 'update', 'create'].includes(type) && resSchema) {
-      resource.responses[200].schema = {$ref:`#/definitions/${name}`}
+      resource.responses[200].schema = { $ref: `#/definitions/${name}` }
     }
 
     if (type === 'index' && resSchema) {
       resource.responses[200].schema = {
         type: 'array',
         items: {
-          $ref: `#/definitions/${name}`
-        }
+          $ref: `#/definitions/${name}`,
+        },
       }
     }
 
     if (type === 'create') {
       resource.responses[201] = {
-        description: `${name} created success`
+        description: `${name} created success`,
       }
 
       resource.responses[200].description = `${name} have been created`
     }
 
-    for (let Err of (route.throw || [])) {
+    for (let Err of route.throw || []) {
       const e = new Err()
       const code = e.code
       if (!code) continue
       resource.responses[code] = {
-        description: (resource.responses[code] && (' or ' + resource.responses[code].description) || '') + e.message
+        description: ((resource.responses[code] && ' or ' + resource.responses[code].description) || '') + e.message,
       }
     }
   }
 
-
-  function getPath (type) {
+  function getPath(type) {
     switch (type) {
       case 'index':
       case 'create':
@@ -158,17 +163,20 @@ function parseRouter (router, parent = {path: '', parameter: undefined}) {
     }
   }
 
-  for (let child of (router.children || [])) {
-    Object.assign(result, parseRouter(child, {
-      path: `${parent.path}/${name}/{${name}}`,
-      parameter: baseParameter
-    }))
+  for (let child of router.children || []) {
+    Object.assign(
+      result,
+      parseRouter(child, {
+        path: `${parent.path}/${name}/{${name}}`,
+        parameter: baseParameter,
+      }),
+    )
   }
 
   return result
 }
 
-function emptyPath () {
+function emptyPath() {
   return {
     parameters: [],
     responses: {},

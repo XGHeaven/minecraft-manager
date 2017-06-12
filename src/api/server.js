@@ -1,8 +1,8 @@
-import boom from 'boom';
-import joi from '../lib/joi';
-import _ from 'lodash';
-import { events } from '../lib/event';
-import { ServerNotStartError } from '../lib/errors';
+import boom from 'boom'
+import joi from '../lib/joi'
+import _ from 'lodash'
+import { events } from '../lib/event'
+import { ServerNotStartError } from '../lib/errors'
 
 export default {
   name: 'server',
@@ -21,24 +21,24 @@ export default {
   checker: {
     resourceId: joi.string().token().required(),
     handle: async function(ctx, next) {
-      const name = ctx.params.server;
-      const server = ctx.context.serverManager.get(name);
+      const name = ctx.params.server
+      const server = ctx.context.serverManager.get(name)
       if (server === null) {
-        throw boom.notFound(`server ${name} not create`);
+        throw boom.notFound(`server ${name} not create`)
       }
-      ctx.server = server;
-      await next();
+      ctx.server = server
+      await next()
     },
   },
 
   index: async function(ctx) {
-    const servers = [];
+    const servers = []
 
     ctx.context.serverManager.forEach(server => {
-      servers.push(server.toJSONObject());
-    });
+      servers.push(server.toJSONObject())
+    })
 
-    ctx.body = servers;
+    ctx.body = servers
   },
 
   create: {
@@ -53,23 +53,23 @@ export default {
       }),
     },
     handle: async function(ctx) {
-      const { name, version, save: saveName, options } = ctx.request.body;
-      const jar = ctx.context.jarManager.get(version);
-      const save = ctx.context.saveManager.get(saveName);
+      const { name, version, save: saveName, options } = ctx.request.body
+      const jar = ctx.context.jarManager.get(version)
+      const save = ctx.context.saveManager.get(saveName)
 
       if (!jar || !save) {
-        throw boom.badData('not created jar or save');
+        throw boom.badData('not created jar or save')
       }
 
-      const server = ctx.context.serverManager.create(name, jar, save, options);
+      const server = ctx.context.serverManager.create(name, jar, save, options)
 
-      ctx.body = server.toJSONObject();
+      ctx.body = server.toJSONObject()
     },
   },
 
   get: async function(ctx) {
-    const server = ctx.server;
-    ctx.body = server.toJSONObject();
+    const server = ctx.server
+    ctx.body = server.toJSONObject()
   },
 
   update: {
@@ -82,31 +82,31 @@ export default {
       }),
     },
     handle: async function(ctx) {
-      const { status, options } = ctx.request.body;
+      const { status, options } = ctx.request.body
 
       if (options) {
-        _.merge(ctx.server.option, options);
+        _.merge(ctx.server.option, options)
       }
 
       switch (status) {
         case 'start':
-          ctx.server.startDeattach();
-          break;
+          ctx.server.startDeattach()
+          break
         case 'stop':
-          ctx.server.stop();
-          break;
+          ctx.server.stop()
+          break
       }
 
-      ctx.body = ctx.server.toJSONObject();
+      ctx.body = ctx.server.toJSONObject()
     },
   },
 
   delete: async ctx => {
     if (!ctx.server.remove()) {
-      throw boom.preconditionRequired('remove server when server stopped');
+      throw boom.preconditionRequired('remove server when server stopped')
     }
 
-    ctx.body = void 0;
+    ctx.body = void 0
   },
 
   children: [
@@ -128,10 +128,9 @@ export default {
         },
         handle: async ctx => {
           if (ctx.query.format === 'event') {
-            ctx.type = 'text/event-stream';
-            ctx.body = events(60 * 1000, ctx.server.monitor.console.eventStream);
-          } else
-            ctx.body = ctx.server.monitor.lines;
+            ctx.type = 'text/event-stream'
+            ctx.body = events(60 * 1000, ctx.server.monitor.console.eventStream)
+          } else ctx.body = ctx.server.monitor.lines
         },
       },
       create: {
@@ -140,8 +139,8 @@ export default {
         },
         throw: [ServerNotStartError],
         handle: async ctx => {
-          if (ctx.server.status !== 'started') throw new ServerNotStartError();
-          ctx.body = await ctx.server.monitor.send(ctx.request.body.command);
+          if (ctx.server.status !== 'started') throw new ServerNotStartError()
+          ctx.body = await ctx.server.monitor.send(ctx.request.body.command)
         },
       },
     },
@@ -150,7 +149,7 @@ export default {
       name: 'error',
 
       index: async ctx => {
-        ctx.body = ctx.server.monitor.errors;
+        ctx.body = ctx.server.monitor.errors
       },
     },
 
@@ -160,9 +159,9 @@ export default {
         summary: 'read player data from nbt, not realtime',
         description: 'read player data from playerdata.dat and ops.json, you cannot modify some value',
         handle: async ctx => {
-          ctx.body = await ctx.server.player.find();
+          ctx.body = await ctx.server.player.find()
         },
       },
     },
   ],
-};
+}

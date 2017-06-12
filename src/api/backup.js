@@ -1,7 +1,7 @@
-import joi from 'joi';
-import boom from 'boom';
+import joi from 'joi'
+import boom from 'boom'
 
-const debug = require('debug')('MM:api:backup');
+const debug = require('debug')('MM:api:backup')
 
 export default {
   name: 'backup',
@@ -9,32 +9,32 @@ export default {
   checker: {
     resourceId: joi.string().token(),
     handle: async (ctx, next) => {
-      const backupId = ctx.params.backup;
-      const backup = ctx.save.getBackup(backupId);
+      const backupId = ctx.params.backup
+      const backup = ctx.save.getBackup(backupId)
 
       if (!backup) {
-        throw boom.resourceGone('there is no backupId ' + backupId);
+        throw boom.resourceGone('there is no backupId ' + backupId)
       }
 
-      ctx.backup = backup;
-      await next();
+      ctx.backup = backup
+      await next()
     },
   },
 
   index: async ctx => {
-    ctx.body = ctx.save.backups;
+    ctx.body = ctx.save.backups
   },
 
   create: async ctx => {
-    ctx.body = ctx.save.backup().backup;
+    ctx.body = ctx.save.backup().backup
   },
 
   get: async ctx => {
-    ctx.body = ctx.backup;
+    ctx.body = ctx.backup
   },
 
   delete: async ctx => {
-    ctx.save.removeBackup(ctx.backup.id);
-    ctx.body = {};
+    ctx.save.removeBackup(ctx.backup.id)
+    ctx.body = {}
   },
-};
+}

@@ -2,25 +2,25 @@
  * base class of save/jar/server, provide some function
  */
 
-import _ from 'lodash';
+import _ from 'lodash'
 
 class Entity {
   constructor(store) {
-    this._autoSaveKeys = Object.keys(store);
-    this.store = store;
+    this._autoSaveKeys = Object.keys(store)
+    this.store = store
 
-    _.merge(this, store);
+    _.merge(this, store)
   }
 
   save() {
     for (let key of this._autoSaveKeys) {
-      this.store[key] = this[key];
+      this.store[key] = this[key]
     }
   }
 
   getManager() {
-    return null;
+    return null
   }
 }
 
-export default Entity;
+export default Entity

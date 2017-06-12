@@ -1,5 +1,5 @@
-import joi from '../lib/joi';
-import yn from 'yn';
+import joi from '../lib/joi'
+import yn from 'yn'
 
 export default {
   name: 'version',
@@ -18,9 +18,9 @@ export default {
     },
     handle: async ctx => {
       if (yn(ctx.query.refresh)) {
-        await ctx.context.jarManager.updateJarVersion();
+        await ctx.context.jarManager.updateJarVersion()
       }
-      ctx.body = ctx.context.jarManager.version.versions || [];
+      ctx.body = ctx.context.jarManager.version.versions || []
     },
   },
-};
+}
